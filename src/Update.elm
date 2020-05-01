@@ -21,8 +21,8 @@ update msg model =
         _ ->
           (model, Cmd.none)
 
-    BeginGame index ->
-      (initGameState index |> GameState, Cmd.none)
+    BeginGame index cards ->
+      (initGameState index cards |> GameState, Cmd.none)
     
     _ ->
       (model, Cmd.none)

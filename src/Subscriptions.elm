@@ -1,26 +1,33 @@
 port module Subscriptions exposing (..)
 
 
+import Json.Decode exposing (decodeString)
 import Maybe exposing (andThen)
 import String exposing (toInt)
 
 
 import Model exposing (..)
-
+import SharedData exposing (decodeInitGameState)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
   messageReceiver (\str ->
-    case model of
-      WaitingForPlayers ->
-        case andThen intToPlayerIndex (toInt str) of
-          Just index ->
-            BeginGame index
+    case decodeString decodeInitGameState str of
+      Ok initGameState ->
+        BeginGame initGameState.index initGameState.cards
 
-          Nothing ->
-            NoOp
+      _ ->
+        NoOp
+    --case model of
+    --  WaitingForPlayers ->
+    --    case andThen intToPlayerIndex (toInt str) of
+    --      Just index ->
+    --        BeginGame index
 
-      _ -> NoOp
+    --      Nothing ->
+    --        NoOp
+
+    --  _ -> NoOp
   )
 
 

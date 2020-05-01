@@ -31,8 +31,7 @@ type alias Card =
 
 
 type alias PlayerData =
-  { cards : List Card
-  , totalScore : Int
+  { totalScore : Int
   , gameScore : Int
   , playerName : String
   }
@@ -68,6 +67,7 @@ type alias GState =
   , firstBidder : PlayerIndex
   , biddingWinner : PlayerIndex
   , myIndex : PlayerIndex
+  , myCards : List Card
   }
 
 
@@ -80,7 +80,7 @@ type Model
 type Msg
   = UpdateGameName String
   | SendGameName
-  | BeginGame PlayerIndex
+  | BeginGame PlayerIndex (List Card)
   | NoOp
 
 
@@ -143,21 +143,21 @@ showCardValue cardValue =
       "King"
 
 
-initCards : List Card
-initCards =
-  [ Card Ace Spade
-  , Card Ace Heart
-  , Card Ace Diamond
-  , Card Ace Club
-  , Card Two Spade
-  , Card Two Heart
-  , Card Two Diamond
-  , Card Two Club
-  ]
+--initCards : List Card
+--initCards =
+--  [ Card Ace Spade
+--  , Card Ace Heart
+--  , Card Ace Diamond
+--  , Card Ace Club
+--  , Card Two Spade
+--  , Card Two Heart
+--  , Card Two Diamond
+--  , Card Two Club
+--  ]
 
 
-initGameState : PlayerIndex -> GState
-initGameState index =
+initGameState : PlayerIndex -> List Card -> GState
+initGameState index cards =
   let
     playerSet =
       { player1 = newPlayer Player1
@@ -172,6 +172,7 @@ initGameState index =
   , firstBidder = Player1
   , biddingWinner = Player1
   , myIndex = index
+  , myCards = cards
   }
 
 
@@ -209,34 +210,33 @@ newPlayer : PlayerIndex -> Player
 newPlayer index =
   { index = index
   , info =
-    { cards = initCards
-    , totalScore = 0
+    { totalScore = 0
     , gameScore = 0
     , playerName = showPlayerIndex index
     }
   }
 
 
-getPlayer : PlayerSet -> PlayerIndex -> Player
-getPlayer players index =
-  case index of
-    Player1 ->
-      players.player1
+--getPlayer : PlayerSet -> PlayerIndex -> Player
+--getPlayer players index =
+--  case index of
+--    Player1 ->
+--      players.player1
 
-    Player2 ->
-      players.player2
+--    Player2 ->
+--      players.player2
 
-    Player3 ->
-      players.player3
+--    Player3 ->
+--      players.player3
 
-    Player4 ->
-      players.player4
+--    Player4 ->
+--      players.player4
 
-    Player5 ->
-      players.player5
+--    Player5 ->
+--      players.player5
 
-    Player6 ->
-      players.player6
+--    Player6 ->
+--      players.player6
 
 
 getPlayers : PlayerSet -> List Player

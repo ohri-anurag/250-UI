@@ -37,7 +37,6 @@ view model =
 
     GameState gState ->
       let
-        me = getPlayer gState.players gState.myIndex
         otherPlayers = getPlayers gState.players |> List.filter (\player -> player.index /= gState.myIndex)
 
         showPlayer player =
@@ -53,7 +52,7 @@ view model =
               [ style "border" "2px solid black"
               , style "display" "flex"
               ]
-        , List.map viewCard me.info.cards
+        , List.map viewCard gState.myCards
           |> div
               [ style "border" "2px solid black" ]
         ]
