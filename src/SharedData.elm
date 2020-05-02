@@ -2,21 +2,15 @@ module SharedData exposing (..)
 
 
 import Json.Decode exposing (..)
-import String exposing (fromInt)
+import Json.Encode as E
 
 
 import Model exposing (..)
 
 
-type alias InitGameState =
-  { index : PlayerIndex
-  , cards : List Card
-  }
-
-
 suitDecoder : Decoder Suit
 suitDecoder =
-  field "suit" string
+  string
   |> andThen (\str ->
     case str of
       "Club" ->
@@ -38,7 +32,7 @@ suitDecoder =
 
 valueDecoder : Decoder CardValue
 valueDecoder =
-  field "value" string
+  string
   |> andThen (\str ->
     case str of
       "Ace" ->
@@ -84,43 +78,100 @@ valueDecoder =
 
 
 cardDecoder : Decoder Card
-cardDecoder = map2 Card valueDecoder suitDecoder
+cardDecoder =
+  map2 Card (field "value" valueDecoder) (field "suit" suitDecoder)
 
 
 cardsDecoder : Decoder (List Card)
 cardsDecoder =
   list cardDecoder
-  |> field "cards"
 
 
-indexDecoder : Decoder PlayerIndex
-indexDecoder =
-  field "index" int
-  |> andThen (\i ->
-    case i of
-      1 ->
+playerIndexDecoder : Decoder PlayerIndex
+playerIndexDecoder =
+  string
+  |> andThen (\str ->
+    case str of
+      "Player1" ->
         succeed Player1
 
-      2 ->
+      "Player2" ->
         succeed Player2
 
-      3 ->
+      "Player3" ->
         succeed Player3
 
-      4 ->
+      "Player4" ->
         succeed Player4
 
-      5 ->
+      "Player5" ->
         succeed Player5
 
-      6 ->
+      "Player6" ->
         succeed Player6
 
       _ ->
-        "Unknown PlayerIndex: " ++ fromInt i |> fail
+        "Unknown PlayerIndex: " ++ str |> fail
 
   )
 
 
-decodeInitGameState : Decoder InitGameState
-decodeInitGameState = map2 InitGameState indexDecoder cardsDecoder
+playerDecoder : Decoder Player
+playerDecoder =
+  map3 Player (field "totalScore" int) (field "gameScore" int) (field "name" string)
+
+
+playerSetDecoder : Decoder PlayerSet
+playerSetDecoder =
+  map6 PlayerSet
+    (field "player1" playerDecoder)
+    (field "player2" playerDecoder)
+    (field "player3" playerDecoder)
+    (field "player4" playerDecoder)
+    (field "player5" playerDecoder)
+    (field "player6" playerDecoder)
+
+
+gameStateDecoder : Decoder GameState
+gameStateDecoder = map5 GameState
+  (field "playerSet" playerSetDecoder)
+  (field "firstBidder" playerIndexDecoder)
+  (field "myIndex" playerIndexDecoder)
+  (field "myCards" cardsDecoder)
+  (field "gameId" string)
+
+
+iBiddingDataDecoder : Decoder IBiddingData
+iBiddingDataDecoder = map2 IBiddingData
+  (field "highestBidder" playerIndexDecoder)
+  (field "highestBid" int)
+
+
+fBiddingDataDecoder : Decoder FBiddingData
+fBiddingDataDecoder = map2 FBiddingData
+  (field "biddingWinner" playerIndexDecoder)
+  (field "winningBid" int)
+
+
+biddingDataDecoder : Decoder BiddingData
+biddingDataDecoder = oneOf
+  [ map IntermediateBiddingData iBiddingDataDecoder
+  , map FinalBiddingData fBiddingDataDecoder
+  ]
+
+
+encodeIntroData : String -> String -> String
+encodeIntroData playerName gameName = E.object
+  [ ("playerName", E.string playerName)
+  , ("gameName", E.string gameName)
+  ]
+  |> E.encode 0
+
+
+encodeBiddingData : String -> PlayerIndex -> Int -> String
+encodeBiddingData gameName myIndex myBid = E.object
+  [ ("gameName", E.string gameName)
+  , ("playerIndex", showPlayerIndex myIndex |> E.string)
+  , ("bid", E.int myBid)
+  ]
+  |> E.encode 0

@@ -1,0 +1,147 @@
+* {
+  margin: 0;
+  padding: 0;
+  font-family: "lucida console";
+  /*background-color: black;*/
+}
+
+.gameName {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  font-size: 28px;
+  word-wrap: break-word;
+  width: 10%;
+  text-align: left;
+}
+
+.playersContainer {
+  width: 100%;
+  margin-top: 20px;
+  display: flex;
+}
+
+.players {
+  display: flex;
+  margin: 0 auto;
+}
+
+.player {
+  margin: 0 100px;
+  width: 131px;
+  height: 200px;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.player span {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.p0 {
+  border-color: darkturquoise;
+  color: darkturquoise;
+}
+
+.p1 {
+  border-color: lightcoral;
+  color: lightcoral;
+}
+
+.p2 {
+  border-color: darkseagreen;
+  color: darkseagreen;
+}
+
+.p3 {
+  border-color: rosybrown;
+  color: rosybrown;
+}
+
+.p4 {
+  border-color: cornflowerblue;
+  color: cornflowerblue;
+}
+
+.playerName {
+  margin-top: 20%;
+  margin-bottom: 20%;
+}
+
+.playerScore {
+  margin-top: 10%;
+}
+
+/*.playerScoreLabel {
+  margin-bottom: 10%;
+}*/
+
+.biddingZone {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 40%;
+  left: 20px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.bidValueLabel {
+  margin-top: 20%;
+}
+
+.bidButtonContainer {
+  margin-top: 20%;
+}
+
+.bidButton {
+  margin: 10px;
+  padding: 10px;
+  font-size: 15px;
+}
+
+.quitBiddingButton {
+  padding: 10px;
+  font-size: 15px;
+}
+
+.myCardsContainer {
+  position: absolute;
+  bottom: 0px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.myName {
+  margin: 0 auto;
+  font-size: 24px;
+}
+
+.myCards {
+  margin: 0 auto;
+  border-top: 1px solid black;
+}
+
+.myCards img {
+  padding: 10px;
+  height: 200px;
+  width: 131px;
+}
+
+.myScores {
+  display: flex;
+  width: 60%;
+  margin: 0 auto;
+  padding-bottom: 20px;
+}
+
+.myScores div {
+  margin: 0 auto;
+  font-size: 18px;
+}

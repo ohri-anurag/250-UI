@@ -7,27 +7,35 @@ import String exposing (toInt)
 
 
 import Model exposing (..)
-import SharedData exposing (decodeInitGameState)
+import SharedData exposing (gameStateDecoder, biddingDataDecoder)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
   messageReceiver (\str ->
-    case decodeString decodeInitGameState str of
-      Ok initGameState ->
-        BeginGame initGameState.index initGameState.cards
+    case model of
+      WaitingForPlayers ->
+        case decodeString gameStateDecoder str of
+          Ok initGameState ->
+            BeginGame initGameState
+
+          _ ->
+            NoOp
+
+      BiddingRound _ _ _ ->
+        case decodeString biddingDataDecoder str of
+          Ok biddingData ->
+            case biddingData of
+              IntermediateBiddingData iBiddingData ->
+                NewHighestBid iBiddingData.highestBidder iBiddingData.highestBid
+
+              FinalBiddingData fBiddingData ->
+                FinalBid fBiddingData.biddingWinner fBiddingData.winningBid
+
+          _ ->
+            NoOp
 
       _ ->
         NoOp
-    --case model of
-    --  WaitingForPlayers ->
-    --    case andThen intToPlayerIndex (toInt str) of
-    --      Just index ->
-    --        BeginGame index
-
-    --      Nothing ->
-    --        NoOp
-
-    --  _ -> NoOp
   )
 
 

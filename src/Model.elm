@@ -30,11 +30,11 @@ type alias Card =
   }
 
 
-type alias PlayerData =
-  { totalScore : Int
-  , gameScore : Int
-  , playerName : String
-  }
+--type alias PlayerData =
+--  { totalScore : Int
+--  , gameScore : Int
+--  , playerName : String
+--  }
 
 
 type PlayerIndex
@@ -47,8 +47,12 @@ type PlayerIndex
 
 
 type alias Player =
-  { index : PlayerIndex
-  , info : PlayerData
+  --{ index : PlayerIndex
+  --, info : PlayerData
+  --}
+  { totalScore : Int
+  , gameScore : Int
+  , name : String
   }
 
 
@@ -62,27 +66,66 @@ type alias PlayerSet =
   }
 
 
-type alias GState =
-  { players : PlayerSet
-  , firstBidder : PlayerIndex
-  , biddingWinner : PlayerIndex
+type alias GameState =
+  { playerSet : PlayerSet
+  , firstBidder : PlayerIndex           -- This person will play the first turn, and have the first chance at bidding.
   , myIndex : PlayerIndex
   , myCards : List Card
+  , gameName : String
+  }
+
+
+type BiddingData
+  = IntermediateBiddingData IBiddingData
+  | FinalBiddingData FBiddingData
+
+
+type alias IBiddingData =
+  { highestBidder : PlayerIndex
+  , highestBid : Int
+  }
+
+
+type alias FBiddingData =
+  { biddingWinner : PlayerIndex
+  , winningBid : Int
   }
 
 
 type Model
-  = BeginGamePage String
+  = BeginGamePage String String
   | WaitingForPlayers
-  | GameState GState
+  | BiddingRound GameState IBiddingData Bool
+  | Round1
 
 
 type Msg
-  = UpdateGameName String
+  = UpdatePlayerName String
+  | UpdateGameName String
   | SendGameName
-  | BeginGame PlayerIndex (List Card)
+  | BeginGame GameState
+  | BidPlus5
+  | BidPlus10
+  | QuitBidding
+  | NewHighestBid PlayerIndex Int
+  | FinalBid PlayerIndex Int
   | NoOp
 
+
+--type alias InitGameState =
+--  { index : PlayerIndex
+--  , cards : List Card
+--  , playerSet: PlayerSet
+--  }
+
+otherPlayers : GameState -> List Player
+otherPlayers gameState =
+  let
+    playerSet = gameState.playerSet
+    allPlayers = getPlayers playerSet
+    me = getPlayer playerSet gameState.myIndex
+  in
+  List.filter (\p -> p /= me) allPlayers
 
 showSuit : Suit -> String
 showSuit suit =
@@ -143,21 +186,33 @@ showCardValue cardValue =
       "King"
 
 
---initCards : List Card
---initCards =
---  [ Card Ace Spade
---  , Card Ace Heart
---  , Card Ace Diamond
---  , Card Ace Club
---  , Card Two Spade
---  , Card Two Heart
---  , Card Two Diamond
---  , Card Two Club
---  ]
+initBiddingData : PlayerIndex -> IBiddingData
+initBiddingData playerIndex =
+  { highestBid = 150
+  , highestBidder = playerIndex
+  }
 
+initCards : List Card
+initCards =
+  [ Card Ace Spade
+  , Card Ace Heart
+  , Card Ace Diamond
+  , Card Ace Club
+  , Card Two Spade
+  , Card Two Heart
+  , Card Two Diamond
+  , Card Two Club
+  ]
 
-initGameState : PlayerIndex -> List Card -> GState
-initGameState index cards =
+newPlayer : PlayerIndex -> Player
+newPlayer index =
+  { totalScore = 0
+  , gameScore = 0
+  , name = showPlayerIndex index
+  }
+
+initGameState : GameState
+initGameState =
   let
     playerSet =
       { player1 = newPlayer Player1
@@ -168,17 +223,18 @@ initGameState index cards =
       , player6 = newPlayer Player6
       }
   in
-  { players = playerSet
+  { playerSet = playerSet
   , firstBidder = Player1
-  , biddingWinner = Player1
-  , myIndex = index
-  , myCards = cards
+  , myIndex = Player1
+  , myCards = initCards
+  , gameName = "250aadmi"
   }
 
 
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
-  ( BeginGamePage ""
+  ( BeginGamePage "" ""
+  --( BiddingRound initGameState (initBiddingData Player1)
   , Cmd.none
   )
 
@@ -187,56 +243,45 @@ showPlayerIndex : PlayerIndex -> String
 showPlayerIndex playerIndex =
   case playerIndex of
     Player1 ->
-      "Player 1"
+      "Player1"
 
     Player2 ->
-      "Player 2"
+      "Player2"
 
     Player3 ->
-      "Player 3"
+      "Player3"
 
     Player4 ->
-      "Player 4"
+      "Player4"
 
     Player5 ->
-      "Player 5"
+      "Player5"
 
     Player6 ->
-      "Player 6"
+      "Player6"
 
 
 -- Helpers
-newPlayer : PlayerIndex -> Player
-newPlayer index =
-  { index = index
-  , info =
-    { totalScore = 0
-    , gameScore = 0
-    , playerName = showPlayerIndex index
-    }
-  }
+getPlayer : PlayerSet -> PlayerIndex -> Player
+getPlayer players index =
+  case index of
+    Player1 ->
+      players.player1
 
+    Player2 ->
+      players.player2
 
---getPlayer : PlayerSet -> PlayerIndex -> Player
---getPlayer players index =
---  case index of
---    Player1 ->
---      players.player1
+    Player3 ->
+      players.player3
 
---    Player2 ->
---      players.player2
+    Player4 ->
+      players.player4
 
---    Player3 ->
---      players.player3
+    Player5 ->
+      players.player5
 
---    Player4 ->
---      players.player4
-
---    Player5 ->
---      players.player5
-
---    Player6 ->
---      players.player6
+    Player6 ->
+      players.player6
 
 
 getPlayers : PlayerSet -> List Player
