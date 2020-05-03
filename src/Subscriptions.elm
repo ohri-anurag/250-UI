@@ -7,7 +7,7 @@ import String exposing (toInt)
 
 
 import Model exposing (..)
-import SharedData exposing (biddingDataDecoder, gameStateDecoder, selectionDataDecoder)
+import SharedData exposing (biddingDataDecoder, gameStateDecoder, roundDataDecoder, selectionDataDecoder)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -34,20 +34,45 @@ subscriptions model =
           _ ->
             NoOp
 
-      WaitingForTrump _ _ ->
+      WaitingForTrump fBiddingData gameState ->
         case decodeString selectionDataDecoder str of
           Ok selectionData ->
             StartGameplay
+              { gameState = gameState
+              , biddingData = fBiddingData
+              , selectionData = selectionData
+              , turn = gameState.firstBidder
+              , hand = emptyHand
+              }
 
           _ ->
             NoOp
 
-      TrumpSelection _ _ _ ->
+      TrumpSelection _ fBiddingData gameState ->
         case decodeString selectionDataDecoder str of
           Ok selectionData ->
             StartGameplay
+              { gameState = gameState
+              , biddingData = fBiddingData
+              , selectionData = selectionData
+              , turn = gameState.firstBidder
+              , hand = emptyHand
+              }
 
           _ ->
+            NoOp
+
+      PlayRound round playState _ ->
+        case decodeString roundDataDecoder str of
+          Ok roundData ->
+            case roundData of
+              PlayedCardData playedCard ->
+                PlayCard playedCard.playedCard playedCard.turn
+
+              RoundFinishData playerSet ->
+                NextRound playerSet
+
+          _->
             NoOp
 
       _ ->

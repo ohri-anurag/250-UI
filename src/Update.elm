@@ -2,7 +2,7 @@ port module Update exposing (..)
 
 
 import Model exposing (..)
-import SharedData exposing (encodeBiddingData, encodeIntroData, encodeSelectionData)
+import SharedData exposing (encodeBiddingData, encodeIntroData, encodePlayedCard, encodeSelectionData)
 import Json.Encode exposing (Value, encode)
 
 
@@ -104,28 +104,13 @@ update msg model =
           (model, Cmd.none)
 
     SelectHelper card ->
-      let
-        setHelper1 selectionData val x y =
-          TrumpSelection
-            { selectionData
-            | helper1 = val
-            } x y
-
-        setHelper2 selectionData val x y =
-          TrumpSelection
-            { selectionData
-            | helper2 = val
-            } x y
-
-      in
-
       case model of
         TrumpSelection selectionData x y ->
           case selectionData.helper1 of
             Just c1 ->
               if c1 == card
                 then
-                  ( setHelper1 selectionData Nothing x y
+                  ( TrumpSelection { selectionData | helper1 = Nothing } x y
                   , Cmd.none
                   )
                 else
@@ -133,21 +118,34 @@ update msg model =
                     Just c2 ->
                       if c2 == card
                         then
-                          ( setHelper2 selectionData Nothing x y
+                          ( TrumpSelection { selectionData | helper2 = Nothing } x y
                           , Cmd.none
                           )
                         else
                           (model, Cmd.none)
 
                     Nothing ->
-                      ( setHelper2 selectionData (Just card) x y
+                      ( TrumpSelection { selectionData | helper2 = Just card } x y
                       , Cmd.none
                       )
 
             Nothing ->
-              ( setHelper1 selectionData (Just card) x y
-              , Cmd.none
-              )
+              case selectionData.helper2 of
+                Just c2 ->
+                  if c2 == card
+                    then
+                      ( TrumpSelection { selectionData | helper2 = Nothing } x y
+                      , Cmd.none
+                      )
+                    else
+                      ( TrumpSelection { selectionData | helper1 = Just card } x y
+                      , Cmd.none
+                      )
+
+                Nothing ->
+                  ( TrumpSelection { selectionData | helper1 = Just card } x y
+                  , Cmd.none
+                  )
 
         _ ->
           (model, Cmd.none)
@@ -163,8 +161,64 @@ update msg model =
         _ ->
           (model, Cmd.none)
 
-    StartGameplay ->
-      (Round1, Cmd.none)
+    StartGameplay playState ->
+      (PlayRound Round1 playState True, Cmd.none)
+
+    SendCard card ->
+      case model of
+        PlayRound round playState _ ->
+          ( PlayRound round playState False
+          , encodePlayedCard playState.gameState.gameName card
+            |> sendEncodedValue
+          )
+
+        _ ->
+          (model, Cmd.none)
+
+    PlayCard card nextTurn ->
+      case model of
+        PlayRound round playState _ ->
+          let
+            updateGameState gameState =
+              { gameState
+              | myCards = List.filter ((==) card >> not) gameState.myCards
+              }
+          in
+          ( PlayRound
+              round
+              { playState
+              | gameState = updateGameState playState.gameState
+              , hand = setCardInHand playState.turn card playState.hand
+              , turn = nextTurn
+              }
+              True
+          , Cmd.none
+          )
+
+        _ ->
+          (model, Cmd.none)
+
+    NextRound playerSet ->
+      case model of
+        PlayRound round playState _ ->
+          let
+            newGameState gameState =
+              { gameState
+              | playerSet = playerSet
+              }
+          in
+          ( PlayRound
+            (nextRound round)
+            { playState
+            | gameState = newGameState playState.gameState
+            , hand = emptyHand
+            }
+            True
+          , Cmd.none
+          )
+
+        _ ->
+          (model, Cmd.none)
 
     _ ->
       (model, Cmd.none)

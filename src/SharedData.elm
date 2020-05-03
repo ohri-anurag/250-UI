@@ -167,6 +167,19 @@ selectionDataDecoder = map3 SelectionData
   (nullable cardDecoder |> field "helper2")
 
 
+playedCardDecoder : Decoder PlayedCard
+playedCardDecoder = map2 PlayedCard
+  (field "turn" playerIndexDecoder)
+  (field "playedCard" cardDecoder)
+
+
+roundDataDecoder : Decoder RoundData
+roundDataDecoder = oneOf
+  [ map PlayedCardData playedCardDecoder
+  , map RoundFinishData playerSetDecoder
+  ]
+
+
 encodeIntroData : String -> String -> E.Value
 encodeIntroData playerName gameName = E.object
   [ ("playerName", E.string playerName)
@@ -209,4 +222,11 @@ encodeSelectionData gameName selectionData = E.object
       , ("helper2", encodeMaybe encodeCard selectionData.helper2)
       ]
     )
+  ]
+
+
+encodePlayedCard : String -> Card -> E.Value
+encodePlayedCard gameName card = E.object
+  [ ("gameName", E.string gameName)
+  , ( "card", encodeCard card)
   ]
