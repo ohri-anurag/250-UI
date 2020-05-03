@@ -160,18 +160,53 @@ biddingDataDecoder = oneOf
   ]
 
 
-encodeIntroData : String -> String -> String
+selectionDataDecoder : Decoder SelectionData
+selectionDataDecoder = map3 SelectionData
+  (field "selectedTrump" suitDecoder)
+  (nullable cardDecoder |> field "helper1")
+  (nullable cardDecoder |> field "helper2")
+
+
+encodeIntroData : String -> String -> E.Value
 encodeIntroData playerName gameName = E.object
   [ ("playerName", E.string playerName)
   , ("gameName", E.string gameName)
   ]
-  |> E.encode 0
 
 
-encodeBiddingData : String -> PlayerIndex -> Int -> String
+encodeBiddingData : String -> PlayerIndex -> Int -> E.Value
 encodeBiddingData gameName myIndex myBid = E.object
   [ ("gameName", E.string gameName)
   , ("playerIndex", showPlayerIndex myIndex |> E.string)
   , ("bid", E.int myBid)
   ]
-  |> E.encode 0
+
+
+encodeMaybe : (a -> E.Value) -> Maybe a -> E.Value
+encodeMaybe encoder maybe =
+  case maybe of
+    Just x ->
+      encoder x
+
+    Nothing ->
+      E.string "null"
+
+
+encodeCard : Card -> E.Value
+encodeCard card = E.object
+  [ ("value", showCardValue card.value |> E.string)
+  , ("suit", showSuit False card.suit |> E.string)
+  ]
+
+
+encodeSelectionData : String -> SelectionData -> E.Value
+encodeSelectionData gameName selectionData = E.object
+  [ ("gameName", E.string gameName)
+  , ( "value"
+    , E.object
+      [ ("selectedTrump", showSuit False selectionData.selectedTrump |> E.string)
+      , ("helper1", encodeMaybe encodeCard selectionData.helper1)
+      , ("helper2", encodeMaybe encodeCard selectionData.helper2)
+      ]
+    )
+  ]

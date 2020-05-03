@@ -145,3 +145,95 @@
   margin: 0 auto;
   font-size: 18px;
 }
+
+.trumpContainer {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.trumpBox {
+  width: 100%;
+  height: 80%;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.trumpBoxHeader {
+  margin: 20px auto;
+  font-size: 24px;
+}
+
+.trumps {
+  display: flex;
+  flex-direction: row;
+  margin: 0 auto;
+}
+
+.trumpWithLabel {
+  display: flex;
+  flex-direction: column;
+}
+
+.trumpWithLabel img {
+  width: 88px;
+  height: 133px;
+  margin: 0 40px;
+}
+
+.trumpLabel {
+  margin: 10px auto;
+}
+
+.trump {
+  border: 2px solid lavender;
+  border-radius: 10px;
+}
+
+.selectedTrump {
+  border: 2px solid violet;
+  border-radius: 10px;
+}
+
+.selectedLabel {
+  font-weight: bold;
+}
+
+.helperContainer{
+  text-align: center;
+}
+
+.helperContainer img {
+  width: 65px;
+  height: 100px;
+  margin: 10px;
+}
+
+.helperHeader {
+  font-size: 18px;
+  margin-top: 20px;
+}
+
+.trumpWithLabel img:hover, .helperContainer img:hover {
+  cursor: pointer;
+}
+
+.helper {
+  border: 2px solid lavender;
+  border-radius: 6px;
+}
+
+.selectedHelper {
+  border: 2px solid violet;
+  border-radius: 6px;
+}
+
+.proceedButton {
+  margin: 20px auto;
+  padding: 10px 0;
+  width: 7%;
+  font-size: 18px;
+}

@@ -7,7 +7,7 @@ import String exposing (toInt)
 
 
 import Model exposing (..)
-import SharedData exposing (gameStateDecoder, biddingDataDecoder)
+import SharedData exposing (biddingDataDecoder, gameStateDecoder, selectionDataDecoder)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -21,7 +21,7 @@ subscriptions model =
           _ ->
             NoOp
 
-      BiddingRound _ _ _ ->
+      BiddingRound gameState _ _ ->
         case decodeString biddingDataDecoder str of
           Ok biddingData ->
             case biddingData of
@@ -29,7 +29,23 @@ subscriptions model =
                 NewHighestBid iBiddingData.highestBidder iBiddingData.highestBid
 
               FinalBiddingData fBiddingData ->
-                FinalBid fBiddingData.biddingWinner fBiddingData.winningBid
+                FinalBid fBiddingData gameState
+
+          _ ->
+            NoOp
+
+      WaitingForTrump _ _ ->
+        case decodeString selectionDataDecoder str of
+          Ok selectionData ->
+            StartGameplay
+
+          _ ->
+            NoOp
+
+      TrumpSelection _ _ _ ->
+        case decodeString selectionDataDecoder str of
+          Ok selectionData ->
+            StartGameplay
 
           _ ->
             NoOp

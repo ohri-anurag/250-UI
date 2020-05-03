@@ -92,10 +92,19 @@ type alias FBiddingData =
   }
 
 
+type alias SelectionData =
+  { selectedTrump : Suit
+  , helper1 : Maybe Card
+  , helper2 : Maybe Card
+  }
+
+
 type Model
   = BeginGamePage String String
   | WaitingForPlayers
   | BiddingRound GameState IBiddingData Bool
+  | TrumpSelection SelectionData FBiddingData GameState
+  | WaitingForTrump FBiddingData GameState
   | Round1
 
 
@@ -108,7 +117,13 @@ type Msg
   | BidPlus10
   | QuitBidding
   | NewHighestBid PlayerIndex Int
-  | FinalBid PlayerIndex Int
+  | FinalBid FBiddingData GameState
+  | SelectTrump Suit
+  | SelectHelper Card
+  | SendTrump
+  | StartGameplay
+  --| UpdateSuit HelperType String
+  --| UpdateCardValue HelperType String
   | NoOp
 
 
@@ -117,6 +132,19 @@ type Msg
 --  , cards : List Card
 --  , playerSet: PlayerSet
 --  }
+
+
+allSuits : List Suit
+allSuits = [Club, Heart, Diamond, Spade]
+
+
+allCardValues : List CardValue
+allCardValues = [Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King]
+
+
+allCards : List Card
+allCards = List.concatMap (\cardValue -> List.map (Card cardValue) allSuits) allCardValues
+
 
 otherPlayers : GameState -> List Player
 otherPlayers gameState =
@@ -127,20 +155,25 @@ otherPlayers gameState =
   in
   List.filter (\p -> p /= me) allPlayers
 
-showSuit : Suit -> String
-showSuit suit =
-  case suit of
-    Club ->
-      "Clubs"
+showSuit : Bool -> Suit -> String
+showSuit isPlural suit =
+  let
+    suitStr =
+      case suit of
+        Club ->
+          "Club"
 
-    Heart ->
-      "Hearts"
+        Heart ->
+          "Heart"
 
-    Diamond ->
-      "Diamonds"
+        Diamond ->
+          "Diamond"
 
-    Spade ->
-      "Spades"
+        Spade ->
+          "Spade"
+
+  in
+  suitStr ++ if isPlural then "s" else ""
 
 
 showCardValue : CardValue -> String
@@ -231,10 +264,19 @@ initGameState =
   }
 
 
+initSelectionData : SelectionData
+initSelectionData =
+  { selectedTrump = Spade
+  , helper1 = Nothing
+  , helper2 = Nothing
+  }
+
+
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
   ( BeginGamePage "" ""
   --( BiddingRound initGameState (initBiddingData Player1)
+  --( TrumpSelection initSelectionData
   , Cmd.none
   )
 
@@ -306,3 +348,13 @@ intToPlayerIndex num =
     5 -> Just Player5
     6 -> Just Player6
     _ -> Nothing
+
+
+isJust : Maybe a -> Bool
+isJust maybe =
+  case maybe of
+    Just _ ->
+      True
+
+    Nothing ->
+      False

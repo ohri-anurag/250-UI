@@ -2,10 +2,17 @@ port module Update exposing (..)
 
 
 import Model exposing (..)
-import SharedData exposing (encodeIntroData, encodeBiddingData)
+import SharedData exposing (encodeBiddingData, encodeIntroData, encodeSelectionData)
+import Json.Encode exposing (Value, encode)
 
 
 port sendMessage : String -> Cmd msg
+
+
+sendEncodedValue : Value -> Cmd msg
+sendEncodedValue val =
+  encode 0 val
+  |> sendMessage
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -32,7 +39,7 @@ update msg model =
         BeginGamePage playerName gameName ->
           ( WaitingForPlayers
           , encodeIntroData playerName gameName
-            |> sendMessage
+            |> sendEncodedValue
           )
 
         _ ->
@@ -55,7 +62,7 @@ update msg model =
         BiddingRound gameState biddingData _ ->
           ( BiddingRound gameState biddingData False
           , encodeBiddingData gameState.gameName gameState.myIndex 0
-            |> sendMessage
+            |> sendEncodedValue
           )
 
         _ ->
@@ -76,7 +83,87 @@ update msg model =
         _ ->
           (model, Cmd.none)
 
-    FinalBid _ _ ->
+    FinalBid fBiddingData gameState ->
+      if fBiddingData.biddingWinner == gameState.myIndex
+        then
+          (TrumpSelection initSelectionData fBiddingData gameState, Cmd.none)
+        else
+          (WaitingForTrump fBiddingData gameState, Cmd.none)
+
+    SelectTrump suit ->
+      case model of
+        TrumpSelection selectionData x y ->
+          ( TrumpSelection
+            { selectionData
+            | selectedTrump = suit
+            } x y
+          , Cmd.none
+          )
+
+        _ ->
+          (model, Cmd.none)
+
+    SelectHelper card ->
+      let
+        setHelper1 selectionData val x y =
+          TrumpSelection
+            { selectionData
+            | helper1 = val
+            } x y
+
+        setHelper2 selectionData val x y =
+          TrumpSelection
+            { selectionData
+            | helper2 = val
+            } x y
+
+      in
+
+      case model of
+        TrumpSelection selectionData x y ->
+          case selectionData.helper1 of
+            Just c1 ->
+              if c1 == card
+                then
+                  ( setHelper1 selectionData Nothing x y
+                  , Cmd.none
+                  )
+                else
+                  case selectionData.helper2 of
+                    Just c2 ->
+                      if c2 == card
+                        then
+                          ( setHelper2 selectionData Nothing x y
+                          , Cmd.none
+                          )
+                        else
+                          (model, Cmd.none)
+
+                    Nothing ->
+                      ( setHelper2 selectionData (Just card) x y
+                      , Cmd.none
+                      )
+
+            Nothing ->
+              ( setHelper1 selectionData (Just card) x y
+              , Cmd.none
+              )
+
+        _ ->
+          (model, Cmd.none)
+
+    SendTrump ->
+      case model of
+        TrumpSelection selectionData fBiddingData gameState ->
+          ( model
+          , encodeSelectionData gameState.gameName selectionData
+            |> sendEncodedValue
+          )
+
+        _ ->
+          (model, Cmd.none)
+
+    StartGameplay ->
       (Round1, Cmd.none)
 
     _ ->
@@ -86,10 +173,15 @@ sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
 sendIncreasedBidMessage model delta =
   case model of
     BiddingRound gameState biddingData _ ->
-      ( model
-      , biddingData.highestBid + delta
+      let
+        newBid = biddingData.highestBid + delta
+      in
+      ( if newBid == 250
+          then BiddingRound gameState biddingData False
+          else model
+      , newBid
         |> encodeBiddingData gameState.gameName gameState.myIndex
-        |> sendMessage
+        |> sendEncodedValue
       )
 
     _ ->
