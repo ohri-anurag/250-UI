@@ -41,7 +41,7 @@ view model =
         , otherPlayersView gameState
         , biddingZoneView highestBidderName biddingData isBidding
         , Just me
-          |> myCardsView gameState.myCards
+          |> myCardsView Nothing (always []) gameState.myCards
         ]
 
     TrumpSelection selectionData _ gameState ->
@@ -57,8 +57,21 @@ view model =
       let
         me = getPlayer playState.gameState.playerSet playState.gameState.myIndex
 
+        baseCard =
+          -- If I am the first bidder, I have no restrictions
+          if playState.gameState.firstBidder == playState.gameState.myIndex
+            then
+              Nothing
+            else
+              -- If it is not my turn or I have already played a card, do not apply the blur effect
+              if isActiveTurn
+                then getCardFromHand playState.gameState.firstBidder playState.hand
+                else Nothing
+
+        isActiveTurn = isActive && playState.turn == playState.gameState.myIndex
+
         attrList card =
-          if isActive && playState.turn == playState.gameState.myIndex
+          if isActiveTurn
             then [SendCard card |> onClick]
             else []
       in
@@ -67,27 +80,13 @@ view model =
         , otherPlayersView playState.gameState
         , staticInfoView playState round
         , playAreaView playState.hand playState.gameState.myIndex
-        , div
-            [ attribute "class" "myCardsContainer" ]
-            [  div
-              [ attribute "class" "myName" ]
-              [ text "Your cards" ]
-            , List.map (
-                \card -> cardView (attrList card) card
-              ) playState.gameState.myCards
-              |> div
-                [ attribute "class" "myCards" ]
-            , div
-                [ attribute "class" "myScores" ]
-                [ div [] [ "This game's score: " ++ fromInt me.gameScore |> text ]
-                , div [] [ "Total Score: " ++ fromInt me.totalScore |> text ]
-                ]
-            ]
+        , Just me
+          |> myCardsView baseCard attrList playState.gameState.myCards
         ]
 
 
-myCardsView : List Card -> Maybe Player -> Html Msg
-myCardsView myCards maybeMe =
+myCardsView : Maybe Card -> (Card -> List (Attribute Msg)) -> List Card -> Maybe Player -> Html Msg
+myCardsView maybeBaseCard oldAttrList myCards maybeMe =
   let
     scoreView = 
       case maybeMe of
@@ -101,11 +100,30 @@ myCardsView myCards maybeMe =
 
         Nothing ->
           []
+
+    cardList =
+      let
+        attrList card =
+          case maybeBaseCard of
+            Just baseCard ->
+              let
+                hasValidCard =
+                  List.any (\c -> c.suit == baseCard.suit) myCards
+              in
+              if hasValidCard && card.suit /= baseCard.suit
+                then [attribute "class" "blurCard"]
+                else oldAttrList card
+
+            Nothing ->
+              oldAttrList card
+      in
+      List.map (\card -> cardView (attrList card) card) myCards
+
   in
   [ div
       [ attribute "class" "myName" ]
       [ text "Your cards" ]
-    , List.map (cardView []) myCards
+    , cardList
       |> div
         [ attribute "class" "myCards" ]
   ]
@@ -273,7 +291,7 @@ trumpSelectionView selectionData myCards me =
           ]
           [text "Proceed"]
         ]
-    , myCardsView myCards Nothing
+    , myCardsView Nothing (always []) myCards Nothing
     ]
 
 

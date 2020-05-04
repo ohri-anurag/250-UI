@@ -334,3 +334,7 @@
   border-color: black;
   margin: 0 auto;
 }
+
+.blurCard {
+  opacity: 0.3;
+}

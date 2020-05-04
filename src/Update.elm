@@ -183,6 +183,34 @@ update msg model =
               { gameState
               | myCards = List.filter ((==) card >> not) gameState.myCards
               }
+
+            updatePlayerStatus oldStatus =
+              if playState.turn == playState.gameState.myIndex
+                -- It was my own turn
+                then oldStatus
+                else
+                  -- Is the card a helper card?
+                  -- If so, set its status to bidding team
+                  -- Also, if all bidding team members have been revealed,
+                  -- set the rest of the players as anti-team
+                  let
+                    maxSize = biddingTeamSize playState.selectionData
+                    newStatus =
+                      if isPlayerHelper card playState.selectionData
+                        then
+                          setPlayerStatus playState.turn BiddingTeam oldStatus
+                        else
+                          oldStatus
+                    currentSize =
+                      getPlayerStatuses newStatus
+                      |> List.filter (Tuple.second >> (==) BiddingTeam)
+                      |> List.length
+                    hasTeamBeenRevealed = maxSize == currentSize
+                  in
+                  getPlayerStatuses newStatus
+                  |> List.filter (Tuple.second >> (/=) BiddingTeam)
+                  |> List.map Tuple.first
+                  |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatus
           in
           ( PlayRound
               round
@@ -190,6 +218,7 @@ update msg model =
               | gameState = updateGameState playState.gameState
               , hand = setCardInHand playState.turn card playState.hand
               , turn = nextTurn
+              , playersStatus = updatePlayerStatus playState.playersStatus
               }
               True
           , Cmd.none

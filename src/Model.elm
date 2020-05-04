@@ -30,11 +30,20 @@ type alias Card =
   }
 
 
---type alias PlayerData =
---  { totalScore : Int
---  , gameScore : Int
---  , playerName : String
---  }
+type PlayerStatus
+ = BiddingTeam
+ | AntiTeam
+ | Undecided
+
+
+type alias PlayerStatusSet =
+  { status1 : PlayerStatus
+  , status2 : PlayerStatus
+  , status3 : PlayerStatus
+  , status4 : PlayerStatus
+  , status5 : PlayerStatus
+  , status6 : PlayerStatus
+  }
 
 
 type PlayerIndex
@@ -137,6 +146,7 @@ type alias PlayState =
   , selectionData : SelectionData
   , turn : PlayerIndex
   , hand : Hand
+  , playersStatus : PlayerStatusSet
   }
 
 
@@ -439,6 +449,17 @@ setCardInHand playerIndex card hand =
       }
 
 
+initPlayerStatusSet : PlayerStatusSet
+initPlayerStatusSet =
+  { status1 = Undecided
+  , status2 = Undecided
+  , status3 = Undecided
+  , status4 = Undecided
+  , status5 = Undecided
+  , status6 = Undecided
+  }
+
+
 initPlayState : PlayState
 initPlayState = 
   { gameState = initGameState
@@ -449,14 +470,15 @@ initPlayState =
   , selectionData = initSelectionData
   , turn = Player1
   , hand = emptyHand
+  , playersStatus = initPlayerStatusSet
   }
 
 
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
-  --( BeginGamePage "" ""
+  ( BeginGamePage "" ""
   --( BiddingRound initGameState (initBiddingData Player1)
-  ( TrumpSelection initSelectionData { biddingWinner = Player1, winningBid = 180 } initGameState
+  --( TrumpSelection initSelectionData { biddingWinner = Player1, winningBid = 180 } initGameState
   --( PlayRound Round1 initPlayState True
   , Cmd.none
   )
@@ -516,6 +538,78 @@ getPlayers players =
   , players.player5
   , players.player6
   ]
+
+
+getPlayerStatuses : PlayerStatusSet -> List (PlayerIndex, PlayerStatus)
+getPlayerStatuses playerStatusSet = List.map2 Tuple.pair allPlayerIndices
+  [ playerStatusSet.status1
+  , playerStatusSet.status2
+  , playerStatusSet.status3
+  , playerStatusSet.status4
+  , playerStatusSet.status5
+  , playerStatusSet.status6
+  ]
+
+
+setPlayerStatus : PlayerIndex -> PlayerStatus -> PlayerStatusSet -> PlayerStatusSet
+setPlayerStatus playerIndex playerStatus playerStatusSet =
+  case playerIndex of
+    Player1 ->
+      { playerStatusSet
+      | status1 = playerStatus
+      }
+
+    Player2 ->
+      { playerStatusSet
+      | status2 = playerStatus
+      }
+
+    Player3 ->
+      { playerStatusSet
+      | status3 = playerStatus
+      }
+
+    Player4 ->
+      { playerStatusSet
+      | status4 = playerStatus
+      }
+
+    Player5 ->
+      { playerStatusSet
+      | status5 = playerStatus
+      }
+
+    Player6 ->
+      { playerStatusSet
+      | status6 = playerStatus
+      }
+
+
+
+isPlayerHelper : Card -> SelectionData -> Bool
+isPlayerHelper card selectionData =
+  let
+    isHelper helper = Maybe.withDefault False <| Maybe.map ((==) card) helper
+  in
+  isHelper selectionData.helper1 || isHelper selectionData.helper2
+
+
+amIHelper : List Card -> SelectionData -> Bool
+amIHelper myCards selectionData =
+  let
+    isHelper helper = Maybe.withDefault False <| Maybe.map (\c -> List.member c myCards) helper
+  in
+  isHelper selectionData.helper1 || isHelper selectionData.helper2
+
+
+biddingTeamSize : SelectionData -> Int
+biddingTeamSize selectionData =
+  let
+    isHelper helper = Maybe.withDefault 0 <| Maybe.map (always 1) helper
+  in
+  1 -- For the bidder
+  + isHelper selectionData.helper1
+  + isHelper selectionData.helper2
 
 
 --intToPlayerIndex : Int -> Maybe PlayerIndex

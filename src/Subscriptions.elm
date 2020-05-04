@@ -43,6 +43,13 @@ subscriptions model =
               , selectionData = selectionData
               , turn = gameState.firstBidder
               , hand = emptyHand
+              , playersStatus =
+                  getPlayersStatus
+                    gameState.myIndex
+                    fBiddingData.biddingWinner
+                    selectionData
+                    gameState.myCards
+                    initPlayerStatusSet
               }
 
           _ ->
@@ -57,6 +64,13 @@ subscriptions model =
               , selectionData = selectionData
               , turn = gameState.firstBidder
               , hand = emptyHand
+              , playersStatus =
+                  getPlayersStatus
+                    gameState.myIndex
+                    fBiddingData.biddingWinner
+                    selectionData
+                    gameState.myCards
+                    initPlayerStatusSet
               }
 
           _ ->
@@ -80,6 +94,34 @@ subscriptions model =
   )
 
 
+getPlayersStatus : PlayerIndex -> PlayerIndex -> SelectionData -> List Card -> PlayerStatusSet -> PlayerStatusSet
+getPlayersStatus myIndex winnerIndex selectionData myCards playerStatusSet =
+  let
+    onlyBidderInBiddingTeam statusSet =
+      -- What if bidder doesn't ask for any helper
+      if biddingTeamSize selectionData == 1
+        then
+          List.filter ((/=) myIndex) allPlayerIndices
+          |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) statusSet
+        else
+          -- Bidder asked for at least one helper, so return the set as is.
+          statusSet
+
+    -- Set the bidder's status to bidding team
+    newStatusSet = setPlayerStatus winnerIndex BiddingTeam playerStatusSet
+  in
+  if myIndex == winnerIndex
+    then
+      -- My status has already been set
+      onlyBidderInBiddingTeam newStatusSet
+    else
+      -- I am not the bidder
+      -- Setting my own status
+      if amIHelper myCards selectionData
+        then
+          setPlayerStatus myIndex BiddingTeam newStatusSet
+        else
+          setPlayerStatus myIndex AntiTeam newStatusSet
 
 
 port messageReceiver : (String -> msg) -> Sub msg
