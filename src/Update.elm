@@ -191,11 +191,13 @@ update msg model =
                 else
                   playState.helpersRevealed
 
+            hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playState.selectionData
+
             updatePlayerStatus oldStatus =
               case playState.turn of
                 Just turn ->
-                  if turn == playState.gameState.myIndex
-                    -- It was my own turn
+                  if turn == playState.gameState.myIndex || hasTeamBeenRevealed
+                    -- It was my own turn, or the team had already been revealed
                     then oldStatus
                     else
                       -- Is the card a helper card?
@@ -205,14 +207,9 @@ update msg model =
                       if isPlayerHelper card playState.selectionData
                         then
                           let
-                            --maxSize = biddingTeamSize playState.selectionData
                             newStatus = setPlayerStatus turn BiddingTeam oldStatus
-                            --currentSize =
-                            --  getPlayerStatuses newStatus
-                            --  |> List.filter (Tuple.second >> (==) BiddingTeam)
-                            --  |> List.length
-                            hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playState.selectionData
                           in
+                          -- If team was just revealed, mark the anti team
                           if hasTeamBeenRevealed
                             then
                               getPlayerStatuses newStatus
