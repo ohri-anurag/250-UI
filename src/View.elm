@@ -60,13 +60,13 @@ view model =
 
         baseCard =
           -- If I am the first bidder, I have no restrictions
-          if playState.gameState.firstBidder == playState.gameState.myIndex
+          if playState.firstPlayer == playState.gameState.myIndex
             then
               Nothing
             else
               -- If it is not my turn or I have already played a card, do not apply the blur effect
               if isActiveTurn
-                then getCardFromHand playState.gameState.firstBidder playState.hand
+                then getCardFromHand playState.firstPlayer playState.hand
                 else Nothing
 
         isActiveTurn = 
