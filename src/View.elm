@@ -38,7 +38,8 @@ view model =
       in
       div []
         [ gameNameView gameState.gameName
-        , otherPlayersView gameState
+        , List.map (\i -> (i, Undecided)) allPlayerIndices
+          |> otherPlayersView gameState
         , biddingZoneView highestBidderName biddingData isBidding
         , Just me
           |> myCardsView Nothing (always []) gameState.myCards
@@ -77,7 +78,8 @@ view model =
       in
       div []
         [ gameNameView playState.gameState.gameName
-        , otherPlayersView playState.gameState
+        , getPlayerStatuses playState.playersStatus
+          |> otherPlayersView playState.gameState
         , staticInfoView playState round
         , playAreaView playState.hand playState.gameState.myIndex
         , Just me
@@ -140,9 +142,26 @@ gameNameView name =
     [ text name ]
 
 
-otherPlayersView : GameState -> Html Msg
-otherPlayersView gameState =
-  otherPlayers gameState
+otherPlayersView : GameState -> List (PlayerIndex, PlayerStatus) -> Html Msg
+otherPlayersView gameState allStatuses =
+  let
+    myStatus =
+      lookup gameState.myIndex allStatuses
+      |> Maybe.withDefault Undecided
+
+    isAllied playerStatus =
+      -- If my own status is undecided, then I don't know anyone else's status, return nothing
+      -- If a player's status is undecided, also return nothing
+      if myStatus == Undecided || playerStatus == Undecided
+        then Nothing
+        -- Otherwise, a player is allied to me, if their status is same as mine.
+        else playerStatus == myStatus |> Just
+
+    otherPlayers =
+      List.filter (Tuple.first >> (/=) gameState.myIndex) allStatuses
+      |> List.map (Tuple.mapBoth (getPlayer gameState.playerSet) isAllied)
+  in
+  otherPlayers
     |> List.indexedMap playerView
     |> div
         [ attribute "class" "players" ]
@@ -389,10 +408,21 @@ playAreaView hand myIndex =
     ]
 
 
-playerView : Int -> Player -> Html Msg
-playerView i player =
+playerView : Int -> (Player, Maybe Bool) -> Html Msg
+playerView i (player, maybeIsAllied) =
+  let
+    alliedClass =
+      case maybeIsAllied of
+        Just isAllied ->
+          if isAllied
+            then "ally"
+            else "enemy"
+
+        Nothing ->
+          ""
+  in
   div
-    [ "player p" ++ fromInt i |> attribute "class" ]
+    [ alliedClass ++ " player p" ++ fromInt i |> attribute "class" ]
     [ player.name
         |> text
         |> List.singleton

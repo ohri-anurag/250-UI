@@ -144,9 +144,11 @@ type alias PlayState =
   { gameState : GameState
   , biddingData : FBiddingData
   , selectionData : SelectionData
+  , firstPlayer : PlayerIndex
   , turn : PlayerIndex
   , hand : Hand
   , playersStatus : PlayerStatusSet
+  , helpersRevealed : Int
   }
 
 
@@ -468,9 +470,11 @@ initPlayState =
     , winningBid = 180
     }
   , selectionData = initSelectionData
+  , firstPlayer = Player1
   , turn = Player1
   , hand = emptyHand
   , playersStatus = initPlayerStatusSet
+  , helpersRevealed = 0
   }
 
 
@@ -585,7 +589,6 @@ setPlayerStatus playerIndex playerStatus playerStatusSet =
       }
 
 
-
 isPlayerHelper : Card -> SelectionData -> Bool
 isPlayerHelper card selectionData =
   let
@@ -602,13 +605,12 @@ amIHelper myCards selectionData =
   isHelper selectionData.helper1 || isHelper selectionData.helper2
 
 
-biddingTeamSize : SelectionData -> Int
-biddingTeamSize selectionData =
+maxHelpers : SelectionData -> Int
+maxHelpers selectionData =
   let
     isHelper helper = Maybe.withDefault 0 <| Maybe.map (always 1) helper
   in
-  1 -- For the bidder
-  + isHelper selectionData.helper1
+  isHelper selectionData.helper1
   + isHelper selectionData.helper2
 
 
@@ -622,3 +624,16 @@ biddingTeamSize selectionData =
 --    5 -> Just Player5
 --    6 -> Just Player6
 --    _ -> Nothing
+
+
+lookup : a -> List (a, b) -> Maybe b
+lookup elem list =
+  case list of
+    [] ->
+      Nothing
+
+    (x :: xs) ->
+      if Tuple.first x == elem
+        then Tuple.second x |> Just
+        else lookup elem xs
+

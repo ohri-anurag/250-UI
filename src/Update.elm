@@ -184,6 +184,13 @@ update msg model =
               | myCards = List.filter ((==) card >> not) gameState.myCards
               }
 
+            newHelpersRevealed =
+              if isPlayerHelper card playState.selectionData
+                then
+                  playState.helpersRevealed + 1
+                else
+                  playState.helpersRevealed
+
             updatePlayerStatus oldStatus =
               if playState.turn == playState.gameState.myIndex
                 -- It was my own turn
@@ -193,24 +200,27 @@ update msg model =
                   -- If so, set its status to bidding team
                   -- Also, if all bidding team members have been revealed,
                   -- set the rest of the players as anti-team
-                  let
-                    maxSize = biddingTeamSize playState.selectionData
-                    newStatus =
-                      if isPlayerHelper card playState.selectionData
+                  if isPlayerHelper card playState.selectionData
+                    then
+                      let
+                        --maxSize = biddingTeamSize playState.selectionData
+                        newStatus = setPlayerStatus playState.turn BiddingTeam oldStatus
+                        --currentSize =
+                        --  getPlayerStatuses newStatus
+                        --  |> List.filter (Tuple.second >> (==) BiddingTeam)
+                        --  |> List.length
+                        hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playState.selectionData
+                      in
+                      if hasTeamBeenRevealed
                         then
-                          setPlayerStatus playState.turn BiddingTeam oldStatus
+                          getPlayerStatuses newStatus
+                          |> List.filter (Tuple.second >> (/=) BiddingTeam)
+                          |> List.map Tuple.first
+                          |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatus
                         else
-                          oldStatus
-                    currentSize =
-                      getPlayerStatuses newStatus
-                      |> List.filter (Tuple.second >> (==) BiddingTeam)
-                      |> List.length
-                    hasTeamBeenRevealed = maxSize == currentSize
-                  in
-                  getPlayerStatuses newStatus
-                  |> List.filter (Tuple.second >> (/=) BiddingTeam)
-                  |> List.map Tuple.first
-                  |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatus
+                          newStatus
+                    else
+                      oldStatus
           in
           ( PlayRound
               round
@@ -219,8 +229,9 @@ update msg model =
               , hand = setCardInHand playState.turn card playState.hand
               , turn = nextTurn
               , playersStatus = updatePlayerStatus playState.playersStatus
+              , helpersRevealed = newHelpersRevealed
               }
-              True
+              (nextTurn /= playState.firstPlayer)
           , Cmd.none
           )
 

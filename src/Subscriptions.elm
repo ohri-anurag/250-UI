@@ -37,19 +37,24 @@ subscriptions model =
       WaitingForTrump fBiddingData gameState ->
         case decodeString selectionDataDecoder str of
           Ok selectionData ->
+            let
+              (newStatusSet, newHelpersRevealed) =
+                getPlayersStatus
+                  gameState.myIndex
+                  fBiddingData.biddingWinner
+                  selectionData
+                  gameState.myCards
+                  initPlayerStatusSet
+            in
             StartGameplay
               { gameState = gameState
               , biddingData = fBiddingData
               , selectionData = selectionData
+              , firstPlayer = gameState.firstBidder
               , turn = gameState.firstBidder
               , hand = emptyHand
-              , playersStatus =
-                  getPlayersStatus
-                    gameState.myIndex
-                    fBiddingData.biddingWinner
-                    selectionData
-                    gameState.myCards
-                    initPlayerStatusSet
+              , playersStatus = newStatusSet
+              , helpersRevealed = newHelpersRevealed
               }
 
           _ ->
@@ -58,19 +63,24 @@ subscriptions model =
       TrumpSelection _ fBiddingData gameState ->
         case decodeString selectionDataDecoder str of
           Ok selectionData ->
+            let
+              (newStatusSet, newHelpersRevealed) =
+                getPlayersStatus
+                  gameState.myIndex
+                  fBiddingData.biddingWinner
+                  selectionData
+                  gameState.myCards
+                  initPlayerStatusSet
+            in
             StartGameplay
               { gameState = gameState
               , biddingData = fBiddingData
               , selectionData = selectionData
+              , firstPlayer = gameState.firstBidder
               , turn = gameState.firstBidder
               , hand = emptyHand
-              , playersStatus =
-                  getPlayersStatus
-                    gameState.myIndex
-                    fBiddingData.biddingWinner
-                    selectionData
-                    gameState.myCards
-                    initPlayerStatusSet
+              , playersStatus = newStatusSet
+              , helpersRevealed = newHelpersRevealed
               }
 
           _ ->
@@ -94,12 +104,12 @@ subscriptions model =
   )
 
 
-getPlayersStatus : PlayerIndex -> PlayerIndex -> SelectionData -> List Card -> PlayerStatusSet -> PlayerStatusSet
+getPlayersStatus : PlayerIndex -> PlayerIndex -> SelectionData -> List Card -> PlayerStatusSet -> (PlayerStatusSet, Int)
 getPlayersStatus myIndex winnerIndex selectionData myCards playerStatusSet =
   let
     onlyBidderInBiddingTeam statusSet =
       -- What if bidder doesn't ask for any helper
-      if biddingTeamSize selectionData == 1
+      if maxHelpers selectionData == 0
         then
           List.filter ((/=) myIndex) allPlayerIndices
           |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) statusSet
@@ -112,16 +122,16 @@ getPlayersStatus myIndex winnerIndex selectionData myCards playerStatusSet =
   in
   if myIndex == winnerIndex
     then
-      -- My status has already been set
-      onlyBidderInBiddingTeam newStatusSet
+      -- My status has already been set, since I am the bidder
+      (onlyBidderInBiddingTeam newStatusSet, 0)
     else
       -- I am not the bidder
       -- Setting my own status
       if amIHelper myCards selectionData
         then
-          setPlayerStatus myIndex BiddingTeam newStatusSet
+          (setPlayerStatus myIndex BiddingTeam newStatusSet, 1)
         else
-          setPlayerStatus myIndex AntiTeam newStatusSet
+          (setPlayerStatus myIndex AntiTeam newStatusSet, 0)
 
 
 port messageReceiver : (String -> msg) -> Sub msg

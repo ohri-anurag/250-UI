@@ -338,3 +338,11 @@
 .blurCard {
   opacity: 0.3;
 }
+
+.ally {
+  background-color: rgba(0, 255, 0, 0.05);
+}
+
+.enemy {
+  background-color: rgba(255, 0, 0, 0.05);
+}
