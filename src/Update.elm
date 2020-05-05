@@ -192,42 +192,51 @@ update msg model =
                   playState.helpersRevealed
 
             updatePlayerStatus oldStatus =
-              if playState.turn == playState.gameState.myIndex
-                -- It was my own turn
-                then oldStatus
-                else
-                  -- Is the card a helper card?
-                  -- If so, set its status to bidding team
-                  -- Also, if all bidding team members have been revealed,
-                  -- set the rest of the players as anti-team
-                  if isPlayerHelper card playState.selectionData
-                    then
-                      let
-                        --maxSize = biddingTeamSize playState.selectionData
-                        newStatus = setPlayerStatus playState.turn BiddingTeam oldStatus
-                        --currentSize =
-                        --  getPlayerStatuses newStatus
-                        --  |> List.filter (Tuple.second >> (==) BiddingTeam)
-                        --  |> List.length
-                        hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playState.selectionData
-                      in
-                      if hasTeamBeenRevealed
-                        then
-                          getPlayerStatuses newStatus
-                          |> List.filter (Tuple.second >> (/=) BiddingTeam)
-                          |> List.map Tuple.first
-                          |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatus
-                        else
-                          newStatus
+              case playState.turn of
+                Just turn ->
+                  if turn == playState.gameState.myIndex
+                    -- It was my own turn
+                    then oldStatus
                     else
-                      oldStatus
+                      -- Is the card a helper card?
+                      -- If so, set its status to bidding team
+                      -- Also, if all bidding team members have been revealed,
+                      -- set the rest of the players as anti-team
+                      if isPlayerHelper card playState.selectionData
+                        then
+                          let
+                            --maxSize = biddingTeamSize playState.selectionData
+                            newStatus = setPlayerStatus turn BiddingTeam oldStatus
+                            --currentSize =
+                            --  getPlayerStatuses newStatus
+                            --  |> List.filter (Tuple.second >> (==) BiddingTeam)
+                            --  |> List.length
+                            hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playState.selectionData
+                          in
+                          if hasTeamBeenRevealed
+                            then
+                              getPlayerStatuses newStatus
+                              |> List.filter (Tuple.second >> (/=) BiddingTeam)
+                              |> List.map Tuple.first
+                              |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatus
+                            else
+                              newStatus
+                        else
+                          oldStatus
+
+                Nothing ->
+                  oldStatus
+
+            newHand =
+              Maybe.map (\t -> setCardInHand t card playState.hand) playState.turn
+              |> Maybe.withDefault playState.hand
           in
           ( PlayRound
               round
               { playState
               | gameState = updateGameState playState.gameState
-              , hand = setCardInHand playState.turn card playState.hand
-              , turn = nextTurn
+              , hand = newHand
+              , turn = if nextTurn /= playState.firstPlayer then Just nextTurn else Nothing
               , playersStatus = updatePlayerStatus playState.playersStatus
               , helpersRevealed = newHelpersRevealed
               }
@@ -238,7 +247,7 @@ update msg model =
         _ ->
           (model, Cmd.none)
 
-    NextRound playerSet ->
+    NextRound firstPlayer playerSet ->
       case model of
         PlayRound round playState _ ->
           let
@@ -252,6 +261,8 @@ update msg model =
             { playState
             | gameState = newGameState playState.gameState
             , hand = emptyHand
+            , firstPlayer = firstPlayer
+            , turn = Just firstPlayer
             }
             True
           , Cmd.none

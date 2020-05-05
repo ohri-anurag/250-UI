@@ -114,9 +114,15 @@ type alias PlayedCard =
   }
 
 
+type alias NextRoundData =
+  { firstPlayer : PlayerIndex
+  , playerSet : PlayerSet
+  }
+
+
 type RoundData
   = PlayedCardData PlayedCard
-  | RoundFinishData PlayerSet
+  | RoundFinishData NextRoundData
 
 
 type Round
@@ -145,7 +151,7 @@ type alias PlayState =
   , biddingData : FBiddingData
   , selectionData : SelectionData
   , firstPlayer : PlayerIndex
-  , turn : PlayerIndex
+  , turn : Maybe PlayerIndex
   , hand : Hand
   , playersStatus : PlayerStatusSet
   , helpersRevealed : Int
@@ -177,7 +183,7 @@ type Msg
   | StartGameplay PlayState
   | SendCard Card
   | PlayCard Card PlayerIndex
-  | NextRound PlayerSet
+  | NextRound PlayerIndex PlayerSet
   | NoOp
 
 
@@ -471,7 +477,7 @@ initPlayState =
     }
   , selectionData = initSelectionData
   , firstPlayer = Player1
-  , turn = Player1
+  , turn = Just Player1
   , hand = emptyHand
   , playersStatus = initPlayerStatusSet
   , helpersRevealed = 0

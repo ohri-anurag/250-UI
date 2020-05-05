@@ -173,10 +173,16 @@ playedCardDecoder = map2 PlayedCard
   (field "playedCard" cardDecoder)
 
 
+nextRoundDataDecoder : Decoder NextRoundData
+nextRoundDataDecoder = map2 NextRoundData
+  (field "firstPlayer" playerIndexDecoder)
+  (field "playerSet" playerSetDecoder)
+
+
 roundDataDecoder : Decoder RoundData
 roundDataDecoder = oneOf
   [ map PlayedCardData playedCardDecoder
-  , map RoundFinishData playerSetDecoder
+  , map RoundFinishData nextRoundDataDecoder
   ]
 
 

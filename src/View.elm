@@ -69,7 +69,9 @@ view model =
                 then getCardFromHand playState.gameState.firstBidder playState.hand
                 else Nothing
 
-        isActiveTurn = isActive && playState.turn == playState.gameState.myIndex
+        isActiveTurn = 
+          Maybe.map (\t -> isActive && t == playState.gameState.myIndex) playState.turn
+          |> Maybe.withDefault False
 
         attrList card =
           if isActiveTurn
@@ -350,7 +352,8 @@ staticInfoView playState round =
       helper1View ++ helper2View
 
     turnView =
-      pronounify playState.turn ++ " Turn"
+      Maybe.map (\t -> pronounify t ++ " Turn") playState.turn
+      |> Maybe.withDefault "Waiting for round to finish.."
 
     roundView =
       showRound False round

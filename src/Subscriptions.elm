@@ -51,7 +51,7 @@ subscriptions model =
               , biddingData = fBiddingData
               , selectionData = selectionData
               , firstPlayer = gameState.firstBidder
-              , turn = gameState.firstBidder
+              , turn = Just gameState.firstBidder
               , hand = emptyHand
               , playersStatus = newStatusSet
               , helpersRevealed = newHelpersRevealed
@@ -77,7 +77,7 @@ subscriptions model =
               , biddingData = fBiddingData
               , selectionData = selectionData
               , firstPlayer = gameState.firstBidder
-              , turn = gameState.firstBidder
+              , turn = Just gameState.firstBidder
               , hand = emptyHand
               , playersStatus = newStatusSet
               , helpersRevealed = newHelpersRevealed
@@ -93,8 +93,8 @@ subscriptions model =
               PlayedCardData playedCard ->
                 PlayCard playedCard.playedCard playedCard.turn
 
-              RoundFinishData playerSet ->
-                NextRound playerSet
+              RoundFinishData nextRoundData ->
+                NextRound nextRoundData.firstPlayer nextRoundData.playerSet
 
           _->
             NoOp
