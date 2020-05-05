@@ -123,6 +123,7 @@ type alias NextRoundData =
 type RoundData
   = PlayedCardData PlayedCard
   | RoundFinishData NextRoundData
+  | GameFinishData GameState
 
 
 type Round

@@ -183,6 +183,7 @@ roundDataDecoder : Decoder RoundData
 roundDataDecoder = oneOf
   [ map PlayedCardData playedCardDecoder
   , map RoundFinishData nextRoundDataDecoder
+  , map GameFinishData gameStateDecoder
   ]
 
 

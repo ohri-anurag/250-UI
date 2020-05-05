@@ -96,6 +96,10 @@ subscriptions model =
               RoundFinishData nextRoundData ->
                 NextRound nextRoundData.firstPlayer nextRoundData.playerSet
 
+              GameFinishData nextGameData ->
+                BeginGame nextGameData
+
+
           _->
             NoOp
 
