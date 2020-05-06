@@ -111,31 +111,37 @@ subscriptions model =
 getPlayersStatus : PlayerIndex -> PlayerIndex -> SelectionData -> List Card -> PlayerStatusSet -> (PlayerStatusSet, Int)
 getPlayersStatus myIndex winnerIndex selectionData myCards playerStatusSet =
   let
-    onlyBidderInBiddingTeam statusSet =
-      -- What if bidder doesn't ask for any helper
-      if maxHelpers selectionData == 0
-        then
-          List.filter ((/=) myIndex) allPlayerIndices
-          |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) statusSet
-        else
-          -- Bidder asked for at least one helper, so return the set as is.
-          statusSet
-
     -- Set the bidder's status to bidding team
     newStatusSet = setPlayerStatus winnerIndex BiddingTeam playerStatusSet
+
+    -- Apart from the bidder, all are anti team
+    allAntiStatus =
+      List.filter ((/=) winnerIndex) allPlayerIndices
+      |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatusSet
   in
-  if myIndex == winnerIndex
-    then
-      -- My status has already been set, since I am the bidder
-      (onlyBidderInBiddingTeam newStatusSet, 0)
-    else
-      -- I am not the bidder
-      -- Setting my own status
-      if amIHelper myCards selectionData
-        then
-          (setPlayerStatus myIndex BiddingTeam newStatusSet, 1)
-        else
-          (setPlayerStatus myIndex AntiTeam newStatusSet, 0)
+  -- The bidder did not ask for any helper, everyone knows the status
+  if maxHelpers selectionData == 0
+    then (allAntiStatus, 0)
+    else if myIndex == winnerIndex
+      then
+        -- My status has already been set, since I am the bidder
+        (newStatusSet, 0)
+      else
+        -- I am not the bidder
+        if amITheOnlyHelper myCards selectionData
+          -- I am the only helper, set all other statuses to AntiTeam
+          then
+            ( setPlayerStatus myIndex BiddingTeam allAntiStatus
+            , maxHelpers selectionData
+            )
+          else if amIHelper myCards selectionData
+            -- There is another helper
+            then
+              (setPlayerStatus myIndex BiddingTeam newStatusSet, 1)
+            else
+              -- I am not a helper
+              (setPlayerStatus myIndex AntiTeam newStatusSet, 0)
+
 
 
 port messageReceiver : (String -> msg) -> Sub msg

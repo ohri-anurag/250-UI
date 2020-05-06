@@ -209,7 +209,7 @@ encodeMaybe encoder maybe =
       encoder x
 
     Nothing ->
-      E.string "null"
+      E.null
 
 
 encodeCard : Card -> E.Value

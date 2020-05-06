@@ -604,12 +604,26 @@ isPlayerHelper card selectionData =
   isHelper selectionData.helper1 || isHelper selectionData.helper2
 
 
+containsHelper : List Card -> Maybe Card -> Bool
+containsHelper myCards helper = Maybe.withDefault False <| Maybe.map (\c -> List.member c myCards) helper
+
+
 amIHelper : List Card -> SelectionData -> Bool
 amIHelper myCards selectionData =
+  containsHelper myCards selectionData.helper1 || containsHelper myCards selectionData.helper2
+
+
+amITheOnlyHelper : List Card -> SelectionData -> Bool
+amITheOnlyHelper myCards selectionData =
   let
-    isHelper helper = Maybe.withDefault False <| Maybe.map (\c -> List.member c myCards) helper
+    amIHelper1 = containsHelper myCards selectionData.helper1
+    amIHelper2 = containsHelper myCards selectionData.helper2
   in
-  isHelper selectionData.helper1 || isHelper selectionData.helper2
+  -- Either I have both helpers
+  (amIHelper1 && amIHelper2)
+  ||
+  -- Bidder asked for only one helper and that is me
+  (maxHelpers selectionData == 1 && (amIHelper1 || amIHelper2))
 
 
 maxHelpers : SelectionData -> Int

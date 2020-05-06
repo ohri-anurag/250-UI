@@ -184,21 +184,14 @@ update msg model =
               | myCards = List.filter ((==) card >> not) gameState.myCards
               }
 
-            newHelpersRevealed =
-              if isPlayerHelper card playState.selectionData
-                then
-                  playState.helpersRevealed + 1
-                else
-                  playState.helpersRevealed
-
-            hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playState.selectionData
+            hadTeamBeenRevealed = playState.helpersRevealed == maxHelpers playState.selectionData
 
             updatePlayerStatus oldStatus =
               case playState.turn of
                 Just turn ->
-                  if turn == playState.gameState.myIndex || hasTeamBeenRevealed
+                  if turn == playState.gameState.myIndex || hadTeamBeenRevealed
                     -- It was my own turn, or the team had already been revealed
-                    then oldStatus
+                    then (oldStatus, playState.helpersRevealed)
                     else
                       -- Is the card a helper card?
                       -- If so, set its status to bidding team
@@ -208,6 +201,8 @@ update msg model =
                         then
                           let
                             newStatus = setPlayerStatus turn BiddingTeam oldStatus
+                            newHelpersRevealed = playState.helpersRevealed + 1
+                            hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playState.selectionData
                           in
                           -- If team was just revealed, mark the anti team
                           if hasTeamBeenRevealed
@@ -216,13 +211,16 @@ update msg model =
                               |> List.filter (Tuple.second >> (/=) BiddingTeam)
                               |> List.map Tuple.first
                               |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatus
+                              |> \s -> Tuple.pair s newHelpersRevealed
                             else
-                              newStatus
+                              (newStatus, newHelpersRevealed)
                         else
-                          oldStatus
+                          (oldStatus, playState.helpersRevealed)
 
                 Nothing ->
-                  oldStatus
+                  (oldStatus, playState.helpersRevealed)
+
+            (newerStatus, newerHelpersRevealed) = updatePlayerStatus playState.playersStatus
 
             newHand =
               Maybe.map (\t -> setCardInHand t card playState.hand) playState.turn
@@ -234,8 +232,8 @@ update msg model =
               | gameState = updateGameState playState.gameState
               , hand = newHand
               , turn = if nextTurn /= playState.firstPlayer then Just nextTurn else Nothing
-              , playersStatus = updatePlayerStatus playState.playersStatus
-              , helpersRevealed = newHelpersRevealed
+              , playersStatus = newerStatus
+              , helpersRevealed = newerHelpersRevealed
               }
               (nextTurn /= playState.firstPlayer)
           , Cmd.none

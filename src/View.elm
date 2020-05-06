@@ -159,8 +159,18 @@ otherPlayersView gameState allStatuses =
         -- Otherwise, a player is allied to me, if their status is same as mine.
         else playerStatus == myStatus |> Just
 
+    rotateOtherPlayers allPlayers =
+      case allPlayers of
+        (x :: xs) ->
+          if Tuple.first x == gameState.myIndex
+            then xs
+            else xs ++ [x] |> rotateOtherPlayers
+
+        [] ->
+          []
+
     otherPlayers =
-      List.filter (Tuple.first >> (/=) gameState.myIndex) allStatuses
+      rotateOtherPlayers allStatuses
       |> List.map (Tuple.mapBoth (getPlayer gameState.playerSet) isAllied)
   in
   otherPlayers
