@@ -47,7 +47,7 @@ update msg model =
 
     BeginGame initGameState ->
       ( initBiddingData initGameState.firstBidder
-        |> \bd -> BiddingRound initGameState bd True
+        |> \bd -> BiddingRound initGameState allPlayerIndices bd True
       , Cmd.none
       )
 
@@ -59,8 +59,8 @@ update msg model =
 
     QuitBidding ->
       case model of
-        BiddingRound gameState biddingData _ ->
-          ( BiddingRound gameState biddingData False
+        BiddingRound gameState bidders biddingData _ ->
+          ( BiddingRound gameState bidders biddingData False
           , encodeBiddingData gameState.gameName gameState.myIndex 0
             |> sendEncodedValue
           )
@@ -70,15 +70,27 @@ update msg model =
 
     NewHighestBid newHighestBidder newHighestBid ->
       case model of
-        BiddingRound gameState biddingData isBidding ->
-          ( BiddingRound gameState
-            { biddingData
-            | highestBid = newHighestBid
-            , highestBidder = newHighestBidder
-            }
-            isBidding
-          , Cmd.none
-          )
+        BiddingRound gameState bidders biddingData isBidding ->
+          if newHighestBid == 0
+            then
+              ( BiddingRound
+                  gameState
+                  (List.filter ((/=) newHighestBidder) bidders)
+                  biddingData
+                  isBidding
+              , Cmd.none
+              )
+            else
+              ( BiddingRound
+                gameState
+                bidders
+                { biddingData
+                | highestBid = newHighestBid
+                , highestBidder = newHighestBidder
+                }
+                isBidding
+              , Cmd.none
+              )
 
         _ ->
           (model, Cmd.none)
@@ -272,12 +284,12 @@ update msg model =
 sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
 sendIncreasedBidMessage model delta =
   case model of
-    BiddingRound gameState biddingData _ ->
+    BiddingRound gameState bidders biddingData _ ->
       let
         newBid = biddingData.highestBid + delta
       in
       ( if newBid == 250
-          then BiddingRound gameState biddingData False
+          then BiddingRound gameState bidders biddingData False
           else model
       , newBid
         |> encodeBiddingData gameState.gameName gameState.myIndex

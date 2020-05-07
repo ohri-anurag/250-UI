@@ -346,3 +346,13 @@
 .enemy {
   background-color: rgba(255, 0, 0, 0.05);
 }
+
+.bidders {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bidders span {
+  margin: 0 auto;
+}

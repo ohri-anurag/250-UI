@@ -162,7 +162,7 @@ type alias PlayState =
 type Model
   = BeginGamePage String String
   | WaitingForPlayers
-  | BiddingRound GameState IBiddingData Bool
+  | BiddingRound GameState (List PlayerIndex) IBiddingData Bool
   | TrumpSelection SelectionData FBiddingData GameState
   | WaitingForTrump FBiddingData GameState
   | PlayRound Round PlayState Bool
@@ -488,7 +488,7 @@ initPlayState =
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
   ( BeginGamePage "" ""
-  --( BiddingRound initGameState (initBiddingData Player1)
+  -- ( BiddingRound initGameState allPlayerIndices (initBiddingData Player1) True
   --( TrumpSelection initSelectionData { biddingWinner = Player1, winningBid = 180 } initGameState
   --( PlayRound Round1 initPlayState True
   , Cmd.none

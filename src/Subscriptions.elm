@@ -21,7 +21,7 @@ subscriptions model =
           _ ->
             NoOp
 
-      BiddingRound gameState _ _ ->
+      BiddingRound gameState _ _ _ ->
         case decodeString biddingDataDecoder str of
           Ok biddingData ->
             case biddingData of

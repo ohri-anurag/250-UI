@@ -26,7 +26,7 @@ view model =
     WaitingForPlayers ->
       div [] [text "Waiting For Players"]
 
-    BiddingRound gameState biddingData isBidding ->
+    BiddingRound gameState bidders biddingData isBidding ->
       let
         me = getPlayer gameState.playerSet gameState.myIndex
         highestBidderName =
@@ -35,12 +35,13 @@ view model =
             else
               getPlayer gameState.playerSet biddingData.highestBidder
               |> .name
+        bidderNames = List.map (getPlayer gameState.playerSet >> .name) bidders
       in
       div []
         [ gameNameView gameState.gameName
         , List.map (\i -> (i, Undecided)) allPlayerIndices
           |> otherPlayersView gameState
-        , biddingZoneView highestBidderName biddingData isBidding
+        , biddingZoneView highestBidderName bidderNames biddingData isBidding
         , Just me
           |> myCardsView Nothing (always []) gameState.myCards
         ]
@@ -182,8 +183,8 @@ otherPlayersView gameState allStatuses =
         [ attribute "class" "playersContainer" ]
 
 
-biddingZoneView : String -> IBiddingData -> Bool -> Html Msg
-biddingZoneView highestBidderName biddingData isBidding =
+biddingZoneView : String -> List String -> IBiddingData -> Bool -> Html Msg
+biddingZoneView highestBidderName bidderNames biddingData isBidding =
   let
     biddingHtml =
       if isBidding
@@ -210,6 +211,10 @@ biddingZoneView highestBidderName biddingData isBidding =
         else
           [ div [] [text "You can't bid anymore."]
           ]
+    bidders =
+      let bidder name = span [] [text name]
+      in
+      List.map bidder bidderNames
   in
   [ span
       [attribute "class" "bidValueLabel"]
@@ -222,6 +227,14 @@ biddingZoneView highestBidderName biddingData isBidding =
   ]
   ++
   biddingHtml
+  ++
+  [ span []
+      [text "Current Bidders"]
+    ::
+    bidders
+    |> span
+        [attribute "class" "bidders"]
+  ]
   |> div
       [ attribute "class" "biddingZone" ]
 
