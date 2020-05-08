@@ -189,8 +189,12 @@ roundDataDecoder = oneOf
 
 encodeIntroData : String -> String -> E.Value
 encodeIntroData playerName gameName = E.object
-  [ ("playerName", E.string playerName)
-  , ("gameName", E.string gameName)
+  [ ("gameName", E.string gameName)
+  , ("value", E.object
+      [ ("tag", E.string "IntroData")
+      , ("playerName", E.string playerName)
+      ]
+    )
   ]
 
 
