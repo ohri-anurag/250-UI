@@ -408,7 +408,17 @@ staticInfoView playState round =
 playAreaView : Hand -> PlayerIndex -> Html Msg
 playAreaView hand myIndex =
   let
-    otherPlayers = List.filter ((/=) myIndex) allPlayerIndices
+    otherPlayers = rotateOtherPlayers allPlayerIndices
+
+    rotateOtherPlayers allPlayers =
+      case allPlayers of
+        (x :: xs) ->
+          if x == myIndex
+            then xs
+            else xs ++ [x] |> rotateOtherPlayers
+
+        [] ->
+          []
 
     playerCardView i playerIndex =
       let
