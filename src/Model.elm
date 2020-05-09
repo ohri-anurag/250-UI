@@ -170,12 +170,24 @@ type alias BiddingRoundData =
   }
 
 
+type alias TrumpSelectionData =
+  { trump : Suit
+  , helper1 : Maybe Card
+  , helper2 : Maybe Card
+  , bid : Int
+  , playerSet : PlayerSet
+  , myIndex : PlayerIndex
+  , gameName : String
+  , myCards : List Card
+  }
+
+
 type Model
   = BeginGamePage String String
   | WaitingForPlayers (List String) String
   | BiddingRound BiddingRoundData
-  | TrumpSelection SelectionData FBiddingData GameState
-  | WaitingForTrump FBiddingData GameState
+  | TrumpSelection TrumpSelectionData
+  | WaitingForTrump BiddingRoundData
   | PlayRound Round PlayState Bool
 
 
@@ -183,6 +195,13 @@ type SentMessage
   = IntroData
       String    -- Player name
       String    -- Game name
+  | IncreaseBid
+      String        -- Game name
+      PlayerIndex   -- Bidding Player
+      Int           -- Bid Amount
+  | SendQuit
+      String        -- Game Name
+      PlayerIndex   -- My Index
 
 
 type ReceivedMessage
@@ -195,6 +214,11 @@ type ReceivedMessage
       PlayerIndex   -- The first bidder in this game
       PlayerIndex   -- Your player index
       (List Card)   -- Your cards
+  | MaximumBid
+      PlayerIndex   -- The player who made the current maximum bid
+      Int           -- Bid Amount
+  | HasQuitBidding
+      PlayerIndex   -- The player who quit bidding
 
 
 type Msg
@@ -519,7 +543,23 @@ initPlayState =
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
   ( BeginGamePage "" ""
-  -- ( BiddingRound initGameState allPlayerIndices (initBiddingData Player1) True
+  -- ( BiddingRound
+  --   { playerSet =
+  --     { player1 = newPlayer Player1
+  --     , player2 = newPlayer Player2
+  --     , player3 = newPlayer Player3
+  --     , player4 = newPlayer Player4
+  --     , player5 = newPlayer Player5
+  --     , player6 = newPlayer Player6
+  --     }
+  --   , highestBid = 150
+  --   , highestBidder = Player1
+  --   , bidders = allPlayerIndices
+  --   , amIBidding = True
+  --   , gameName = "250aadmi"
+  --   , myIndex = Player1
+  --   , myCards = initCards
+  --   }
   --( TrumpSelection initSelectionData { biddingWinner = Player1, winningBid = 180 } initGameState
   --( PlayRound Round1 initPlayState True
   , Cmd.none

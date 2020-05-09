@@ -24,6 +24,12 @@ sentDataEncoder sentData =
     IntroData playerName gameName ->
       introDataEncoder playerName gameName
 
+    IncreaseBid gameName bidder bid ->
+      increaseBidEncoder gameName bidder bid
+
+    SendQuit gameName myIndex ->
+      quitBiddingEncoder gameName myIndex
+
 
 introDataEncoder : String -> String -> E.Value
 introDataEncoder playerName gameName = E.object
@@ -31,6 +37,29 @@ introDataEncoder playerName gameName = E.object
   , ("value", E.object
       [ ("tag", E.string "IntroData")
       , ("playerName", E.string playerName)
+      ]
+    )
+  ]
+
+
+increaseBidEncoder : String -> PlayerIndex -> Int -> E.Value
+increaseBidEncoder gameName bidder bid = E.object
+  [ ("gameName", E.string gameName)
+  , ("value", E.object
+      [ ("tag", E.string "IncreaseBid")
+      , ("bidder", showPlayerIndex bidder |> E.string)
+      , ("bid", E.int bid)
+      ]
+    )
+  ]
+
+
+quitBiddingEncoder : String -> PlayerIndex -> E.Value
+quitBiddingEncoder gameName myIndex = E.object
+  [ ("gameName", E.string gameName)
+  , ("value", E.object
+      [ ("tag", E.string "QuitBidding")
+      , ("quitter", showPlayerIndex myIndex |> E.string)
       ]
     )
   ]

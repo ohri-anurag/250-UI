@@ -68,6 +68,16 @@ receivedDataDecoder =
           (field "myIndex" playerIndexDecoder)
           (field "myCards" cardsDecoder)
 
+      "MaximumBid" ->
+        map2 MaximumBid
+          (field "highestBidder" playerIndexDecoder)
+          (field "highestBid" int)
+
+      "HasQuitBidding" ->
+        playerIndexDecoder
+        |> field "hasQuitBidding"
+        |> map HasQuitBidding
+
       _ ->
         "Unknown tag received: " ++ tag |> fail
   )

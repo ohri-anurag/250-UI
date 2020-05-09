@@ -36,6 +36,25 @@ update msg model =
 
         _ ->
           (model, Cmd.none)
+    
+    BidPlus5 ->
+      sendIncreasedBidMessage model 5
+
+    BidPlus10 ->
+      sendIncreasedBidMessage model 10
+
+    QuitBidding ->
+      case model of
+        BiddingRound biddingRoundData ->
+          ( { biddingRoundData
+            | amIBidding = False
+            } |> BiddingRound
+          , SendQuit biddingRoundData.gameName biddingRoundData.myIndex
+            |> sendMessage
+          )
+
+        _ ->
+          (model, Cmd.none)
 
     ReceivedMessageType receivedMessage ->
       handleReceivedMessages receivedMessage model
@@ -91,6 +110,81 @@ handleReceivedMessages receivedMessage model =
         _ ->
           (model, Cmd.none)
 
+    MaximumBid bidder bid ->
+      case model of
+        BiddingRound biddingRoundData ->
+          ( { biddingRoundData
+            | highestBid = bid
+            , highestBidder = bidder
+            }
+            |> BiddingRound
+          , Cmd.none
+          )
+        
+        _ ->
+          (model, Cmd.none)
+
+    HasQuitBidding quitter ->
+      case model of
+        BiddingRound biddingRoundData ->
+          let
+            newBidders = List.filter ((/=) quitter) biddingRoundData.bidders
+          in
+            -- Is bidding over?
+          if List.length newBidders == 0
+            -- Did I win bidding?
+            then
+              if biddingRoundData.myIndex == biddingRoundData.highestBidder
+                then
+                  ( TrumpSelection
+                    { trump = Spade
+                    , helper1 = Nothing
+                    , helper2 = Nothing
+                    , bid = biddingRoundData.highestBid
+                    , playerSet = biddingRoundData.playerSet
+                    , myIndex = biddingRoundData.myIndex
+                    , gameName = biddingRoundData.gameName
+                    , myCards = biddingRoundData.myCards
+                    }
+                  , Cmd.none
+                  )
+                else
+                  ( WaitingForTrump biddingRoundData
+                  , Cmd.none
+                  )
+            else
+              ( { biddingRoundData
+                | bidders = newBidders
+                }
+                |> BiddingRound
+              , Cmd.none
+              )
+        
+        _ ->
+          (model, Cmd.none)
+
+
+
+sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
+sendIncreasedBidMessage model delta =
+  case model of
+    BiddingRound biddingRoundData ->
+      let
+        newBid = biddingRoundData.highestBid + delta
+      in
+      ( if newBid >= 250
+          then BiddingRound
+            { biddingRoundData
+            | amIBidding = False
+            }
+          else model
+      , IncreaseBid biddingRoundData.gameName biddingRoundData.myIndex newBid
+        |> sendMessage
+      )
+
+    _ ->
+      (model, Cmd.none)
+
 -- handleSentMessages : SentMessage -> Model -> (Model, Cmd Msg)
 -- handleSentMessages sentMessage model =
 --   case sentMessage of
@@ -103,23 +197,6 @@ handleReceivedMessages receivedMessage model =
 --         |> \bd -> BiddingRound initGameState allPlayerIndices bd True
 --       , Cmd.none
 --       )
-
---     BidPlus5 ->
---       sendIncreasedBidMessage model 5
-
---     BidPlus10 ->
---       sendIncreasedBidMessage model 10
-
---     QuitBidding ->
---       case model of
---         BiddingRound gameState bidders biddingData _ ->
---           ( BiddingRound gameState bidders biddingData False
---           , encodeBiddingData gameState.gameName gameState.myIndex 0
---             |> sendEncodedValue
---           )
-
---         _ ->
---           (model, Cmd.none)
 
 --     NewHighestBid newHighestBidder newHighestBid ->
 --       case model of
@@ -330,24 +407,6 @@ handleReceivedMessages receivedMessage model =
 
 --         _ ->
 --           (model, Cmd.none)
-
---     _ ->
---       (model, Cmd.none)
-
--- sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
--- sendIncreasedBidMessage model delta =
---   case model of
---     BiddingRound gameState bidders biddingData _ ->
---       let
---         newBid = biddingData.highestBid + delta
---       in
---       ( if newBid == 250
---           then BiddingRound gameState bidders biddingData False
---           else model
---       , newBid
---         |> encodeBiddingData gameState.gameName gameState.myIndex
---         |> sendEncodedValue
---       )
 
 --     _ ->
 --       (model, Cmd.none)

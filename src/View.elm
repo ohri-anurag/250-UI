@@ -23,23 +23,34 @@ view model =
       let
         me = getPlayer biddingRoundData.playerSet biddingRoundData.myIndex
       in
-      div []
-        [ gameNameView biddingRoundData.gameName
-        , List.map (\i -> (i, Undecided)) allPlayerIndices
-          |> otherPlayersView biddingRoundData.myIndex biddingRoundData.playerSet
-        , biddingZoneView biddingRoundData
-        , Just me
-          |> myCardsView Nothing (always []) biddingRoundData.myCards
+      div
+        [attribute "class" "biddingRoundView"]
+        [ div
+            [attribute "class" "biddingRoundSidebar"]
+            [ gameNameView biddingRoundData.gameName
+            , biddingZoneView biddingRoundData
+            ]
+        , div
+            [attribute "class" "biddingRoundContent"]
+            [ List.map (\i -> (i, Undecided)) allPlayerIndices
+              |> otherPlayersView biddingRoundData.myIndex biddingRoundData.playerSet
+            , Just me
+              |> myCardsView Nothing (always []) biddingRoundData.myCards
+            ]
         ]
 
-    TrumpSelection selectionData _ gameState ->
-      let
-        me = getPlayer gameState.playerSet gameState.myIndex
-      in
-      trumpSelectionView selectionData gameState.myCards me
+    TrumpSelection trumpSelectionData ->
+      trumpSelectionView trumpSelectionData
 
-    WaitingForTrump _ _ ->
-      div [] [text "Waiting for Bidding Winner to select trump"]
+    WaitingForTrump biddingRoundData ->
+      div
+        [attribute "class" "waitingForTrumpView"]
+        [ "Waiting for "
+            ++ (getPlayer biddingRoundData.playerSet biddingRoundData.highestBidder).name
+            ++ " to select trump. Bid Amount: "
+            ++ fromInt biddingRoundData.highestBid
+          |> text
+        ]
 
     PlayRound round playState isActive ->
       let
@@ -276,12 +287,14 @@ biddingZoneView biddingRoundData =
 
 
 
-trumpSelectionView : SelectionData -> List Card -> Player -> Html Msg
-trumpSelectionView selectionData myCards me =
+trumpSelectionView : TrumpSelectionData -> Html Msg
+trumpSelectionView trumpSelectionData =
   let
+    me = getPlayer trumpSelectionData.playerSet trumpSelectionData.myIndex
+
     trumpView suit =
       let
-        isSelected = suit == selectionData.selectedTrump
+        isSelected = suit == trumpSelectionData.trump
 
         attrList = [SelectTrump suit |> onClick] ++
           if isSelected
@@ -307,12 +320,12 @@ trumpSelectionView selectionData myCards me =
           |> cardView attrList
         ]
 
-    filteredCards = List.filter (\card -> List.member card myCards |> not) allCards
+    filteredCards = List.filter (\card -> List.member card trumpSelectionData.myCards |> not) allCards
 
     isHelperCard card = isHelper1 card || isHelper2 card
 
     isHelper1 card =
-      case selectionData.helper1 of
+      case trumpSelectionData.helper1 of
         Just c1 ->
           card == c1
 
@@ -320,7 +333,7 @@ trumpSelectionView selectionData myCards me =
           False
 
     isHelper2 card =
-      case selectionData.helper2 of
+      case trumpSelectionData.helper2 of
         Just c2 ->
           card == c2
 
@@ -371,7 +384,7 @@ trumpSelectionView selectionData myCards me =
           ]
           [text "Proceed"]
         ]
-    , myCardsView Nothing (always []) myCards Nothing
+    , myCardsView Nothing (always []) trumpSelectionData.myCards Nothing
     ]
 
 
