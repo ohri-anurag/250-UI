@@ -158,14 +158,43 @@ type alias PlayState =
   , helpersRevealed : Int
   }
 
+type alias BiddingRoundData =
+  { playerSet : PlayerSet
+  , highestBid : Int
+  , highestBidder : PlayerIndex
+  , bidders : (List PlayerIndex)
+  , myIndex : PlayerIndex
+  , amIBidding : Bool
+  , gameName : String
+  , myCards : List Card
+  }
+
 
 type Model
   = BeginGamePage String String
-  | WaitingForPlayers
-  | BiddingRound GameState (List PlayerIndex) IBiddingData Bool
+  | WaitingForPlayers (List String) String
+  | BiddingRound BiddingRoundData
   | TrumpSelection SelectionData FBiddingData GameState
   | WaitingForTrump FBiddingData GameState
   | PlayRound Round PlayState Bool
+
+
+type SentMessage
+  = IntroData
+      String    -- Player name
+      String    -- Game name
+
+
+type ReceivedMessage
+  = PlayerJoined
+      String            -- Newly Joined Player
+  | ExistingPlayers
+      (List String)     -- Already existing players in the game
+  | GameData
+      PlayerSet     -- Set of players
+      PlayerIndex   -- The first bidder in this game
+      PlayerIndex   -- Your player index
+      (List Card)   -- Your cards
 
 
 type Msg
@@ -186,6 +215,8 @@ type Msg
   | PlayCard Card PlayerIndex
   | NextRound PlayerIndex PlayerSet
   | NoOp
+  | SentMessageType SentMessage
+  | ReceivedMessageType ReceivedMessage
 
 
 allSuits : List Suit

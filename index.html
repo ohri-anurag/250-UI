@@ -4,10 +4,12 @@
   <!--
     <link rel="shortcut icon" href="img/8puzzle.ico">
   -->
+    <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Nunito">
     <link rel="stylesheet" type="text/css" href="css/Main.css">
   <meta charset="UTF-8">
   <title>250</title>
-  <script type="text/javascript" src="Main.js"></script>
+  <script type="text/javascript" src="Main.min.js"></script>
 </head>
 
 <body>
@@ -20,9 +22,9 @@
     // Create your WebSocket.
     var socket = new WebSocket('ws://localhost:8080/game');
 
-    // When a command goes to the `sendMessage` port, we pass the message
+    // When a command goes to the `messageSender` port, we pass the message
     // along to the WebSocket.
-    app.ports.sendMessage.subscribe(function(message) {
+    app.ports.messageSender.subscribe(function(message) {
       socket.send(message);
     });
 

@@ -1,7 +1,7 @@
 module View exposing (..)
 
 
-import Html exposing (Attribute, Html, button, div, img, input, option, select, span, text)
+import Html exposing (Attribute, Html, button, div, img, input, label, option, select, span, text)
 import Html.Attributes exposing (attribute, height, src, style, width)
 import Html.Events exposing (on, onClick, onInput)
 import String exposing (fromInt)
@@ -14,36 +14,22 @@ view : Model -> Html Msg
 view model =
   case model of
     BeginGamePage playerName gameName ->
-      div []
-        [ div [] [text "Welcome to the card game 250!!"]
-        , div [] [text "Enter your display name:"]
-        , input [onInput UpdatePlayerName] [text playerName]
-        , div [] [text "Enter a name for the group:"]
-        , input [onInput UpdateGameName] [text gameName]
-        , button [onClick SendGameName] [text "Begin Game"]
-        ]
+      beginGamePageView playerName gameName
 
-    WaitingForPlayers ->
-      div [] [text "Waiting For Players"]
+    WaitingForPlayers playerNames gameName ->
+      waitingForPlayersView playerNames gameName
 
-    BiddingRound gameState bidders biddingData isBidding ->
+    BiddingRound biddingRoundData ->
       let
-        me = getPlayer gameState.playerSet gameState.myIndex
-        highestBidderName =
-          if biddingData.highestBidder == gameState.myIndex
-            then "You"
-            else
-              getPlayer gameState.playerSet biddingData.highestBidder
-              |> .name
-        bidderNames = List.map (getPlayer gameState.playerSet >> .name) bidders
+        me = getPlayer biddingRoundData.playerSet biddingRoundData.myIndex
       in
       div []
-        [ gameNameView gameState.gameName
+        [ gameNameView biddingRoundData.gameName
         , List.map (\i -> (i, Undecided)) allPlayerIndices
-          |> otherPlayersView gameState
-        , biddingZoneView highestBidderName bidderNames biddingData isBidding
+          |> otherPlayersView biddingRoundData.myIndex biddingRoundData.playerSet
+        , biddingZoneView biddingRoundData
         , Just me
-          |> myCardsView Nothing (always []) gameState.myCards
+          |> myCardsView Nothing (always []) biddingRoundData.myCards
         ]
 
     TrumpSelection selectionData _ gameState ->
@@ -82,12 +68,55 @@ view model =
       div []
         [ gameNameView playState.gameState.gameName
         , getPlayerStatuses playState.playersStatus
-          |> otherPlayersView playState.gameState
+          |> otherPlayersView playState.gameState.myIndex playState.gameState.playerSet
         , staticInfoView playState round
         , playAreaView playState.hand playState.gameState.myIndex
         , Just me
           |> myCardsView baseCard attrList playState.gameState.myCards
         ]
+
+
+beginGamePageView : String -> String -> Html Msg
+beginGamePageView playerName gameName =
+  div
+    [attribute "class" "beginGame"]
+    [ div
+        [attribute "class" "beginGameHeader"]
+        [text "Welcome to the card game 250!!"]
+    , div []
+        [ label [attribute "for" ""] [text "Enter your display name:"]
+        , input [onInput UpdatePlayerName] [text playerName]
+        ]
+    , div []
+        [ label [attribute "for" ""] [text "Enter a name for the group:"]
+        , input [onInput UpdateGameName] [text gameName]
+        ]
+    , div
+        [ attribute "class" "beginGameButton"
+        , onClick SendGameName
+        ]
+        [text "Begin Game"]
+    ]
+
+
+waitingForPlayersView : List String -> String -> Html Msg
+waitingForPlayersView playerNames gameName =
+  let
+    player name = div [] [text name]
+    players = List.map player playerNames
+  in
+  [ div
+      [attribute "class" "waitingForPlayersHeader"]
+      [ "Waiting For 6 Players in " ++ gameName
+        |> text
+      ]
+  , div
+      []
+      [text "Current Players:"]
+  ]
+  ++ players
+  |> div
+      [attribute "class" "waitingForPlayers"]
 
 
 myCardsView : Maybe Card -> (Card -> List (Attribute Msg)) -> List Card -> Maybe Player -> Html Msg
@@ -145,11 +174,11 @@ gameNameView name =
     [ text name ]
 
 
-otherPlayersView : GameState -> List (PlayerIndex, PlayerStatus) -> Html Msg
-otherPlayersView gameState allStatuses =
+otherPlayersView : PlayerIndex -> PlayerSet -> List (PlayerIndex, PlayerStatus) -> Html Msg
+otherPlayersView myIndex playerSet allStatuses =
   let
     myStatus =
-      lookup gameState.myIndex allStatuses
+      lookup myIndex allStatuses
       |> Maybe.withDefault Undecided
 
     isAllied playerStatus =
@@ -163,7 +192,7 @@ otherPlayersView gameState allStatuses =
     rotateOtherPlayers allPlayers =
       case allPlayers of
         (x :: xs) ->
-          if Tuple.first x == gameState.myIndex
+          if Tuple.first x == myIndex
             then xs
             else xs ++ [x] |> rotateOtherPlayers
 
@@ -172,7 +201,7 @@ otherPlayersView gameState allStatuses =
 
     otherPlayers =
       rotateOtherPlayers allStatuses
-      |> List.map (Tuple.mapBoth (getPlayer gameState.playerSet) isAllied)
+      |> List.map (Tuple.mapBoth (getPlayer playerSet) isAllied)
   in
   otherPlayers
     |> List.indexedMap playerView
@@ -183,11 +212,18 @@ otherPlayersView gameState allStatuses =
         [ attribute "class" "playersContainer" ]
 
 
-biddingZoneView : String -> List String -> IBiddingData -> Bool -> Html Msg
-biddingZoneView highestBidderName bidderNames biddingData isBidding =
+biddingZoneView : BiddingRoundData -> Html Msg
+biddingZoneView biddingRoundData =
   let
+    highestBidderName =
+      if biddingRoundData.highestBidder == biddingRoundData.myIndex
+        then "You"
+        else
+          getPlayer biddingRoundData.playerSet biddingRoundData.highestBidder
+          |> .name
+    bidderNames = List.map (getPlayer biddingRoundData.playerSet >> .name) biddingRoundData.bidders
     biddingHtml =
-      if isBidding
+      if biddingRoundData.amIBidding
         then
           [ div
               [attribute "class" "bidButtonContainer"]
@@ -221,7 +257,7 @@ biddingZoneView highestBidderName bidderNames biddingData isBidding =
       [text "Highest Bid"]
   , span
       [attribute "class" "bidValue"]
-      [fromInt biddingData.highestBid |> text]
+      [fromInt biddingRoundData.highestBid |> text]
   , span []
       ["(" ++ highestBidderName ++ ")" |> text]
   ]
