@@ -1,29 +1,118 @@
 * {
   margin: 0;
   padding: 0;
-  font-family: "lucida console";
-  /*background-color: black;*/
+  font-family: "Nunito";
+  text-align: center;
+}
+
+.beginGame, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView {
+  position: absolute;
+  width: 100%;
+  font-size: 24px;
+}
+
+.beginGame, .waitingForPlayers, .waitingForTrumpView {
+  height: 60%;
+  top: 20%;
+}
+
+.beginGame, .beginGame div {
+  display: flex;
+  flex-direction: column;
+}
+
+.beginGame div {
+  margin: auto;
+}
+
+.beginGame input {
+  border: 1px solid black;
+  font-size: 24px;
+}
+
+.beginGameHeader, .waitingForPlayersHeader {
+  font-size: 40px;
+}
+
+.beginGameButton {
+  border: 2px solid black;
+  border-radius: 10px;
+  padding: 10px;
+  transition: ease-in color 300ms, ease-in background-color 300ms;
+}
+
+.beginGameButton:hover {
+  background-color: black;
+  color: white;
+  cursor: pointer;
+}
+
+.biddingRoundView, .playRoundView {
+  height: 100%;
+  display: flex;
+}
+
+.biddingRoundSidebar, .playRoundSidebar {
+  width: 10%;
+  display: flex;
+  flex-direction: column;
+}
+
+.biddingRoundContent, .playRoundContent {
+  width: 90%;
+  display: flex;
+  flex-direction: column;
 }
 
 .gameName {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  font-size: 28px;
+  font-size: 32px;
   word-wrap: break-word;
-  width: 10%;
-  text-align: left;
+  width: 100%;
+  text-align: center;
+  padding-top: 30px;
+}
+
+.biddingZone {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  font-size: 18px;
+  margin-top: 125%;
+  margin-left: 20px;
+  height: 50%;
+}
+
+.bidValueLabel {
+  margin-top: 20%;
+}
+
+.bidButtonContainer {
+  margin-top: 20%;
+  height: 25%;
+}
+
+.bidButton {
+  margin: 10px;
+  padding: 10px;
+  font-size: 15px;
+}
+
+.quitBiddingButton {
+  padding: 10px;
+  font-size: 15px;
 }
 
 .playersContainer {
   width: 100%;
-  margin-top: 20px;
+  /* margin-top: 20px; */
   display: flex;
+  height: 25%;
 }
 
 .players {
   display: flex;
   margin: 0 auto;
+  padding-top: 20px;
 }
 
 .player {
@@ -78,42 +167,8 @@
   margin-top: 10%;
 }
 
-/*.playerScoreLabel {
-  margin-bottom: 10%;
-}*/
-
-.biddingZone {
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 40%;
-  left: 20px;
-  text-align: center;
-  font-size: 18px;
-}
-
-.bidValueLabel {
-  margin-top: 20%;
-}
-
-.bidButtonContainer {
-  margin-top: 20%;
-}
-
-.bidButton {
-  margin: 10px;
-  padding: 10px;
-  font-size: 15px;
-}
-
-.quitBiddingButton {
-  padding: 10px;
-  font-size: 15px;
-}
-
 .myCardsContainer {
-  position: absolute;
-  bottom: 0px;
+  height: 30%;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -121,7 +176,6 @@
 
 .myName {
   margin: 0 auto;
-  font-size: 24px;
 }
 
 .myCards {
@@ -143,7 +197,6 @@
   display: flex;
   width: 60%;
   margin: 0 auto;
-  padding-bottom: 20px;
 }
 
 .myScores div {
@@ -152,16 +205,14 @@
 }
 
 .trumpContainer {
-  position: fixed;
-  top: 0;
-  width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
 }
 
 .trumpBox {
   width: 100%;
-  height: 80%;
+  height: 70%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -209,6 +260,10 @@
 
 .helperContainer{
   text-align: center;
+}
+
+.waitingForTrumpView {
+  font-size: 32px;
 }
 
 .helperContainer img {
@@ -300,16 +355,17 @@
   font-size: 32px;
 }
 
-.playArea {
-  width: 60%;
+.playArea, .filler {
+  width: 70%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  height: 45%;
 }
 
 .playerCards {
   display: flex;
-  margin: 80px auto;
+  margin: 0 auto;
 }
 
 .yetToPlay, .playerCard {
@@ -318,7 +374,7 @@
   border-width: 2px;
   border-style: solid;
   border-radius: 6px;
-  margin: 0 60px;
+  margin: 40px 60px;
 }
 
 .yetToPlay span {
@@ -332,7 +388,7 @@
 
 .p5 {
   border-color: black;
-  margin: 0 auto;
+  margin: 40px auto;
 }
 
 .blurCard {

@@ -1,7 +1,7 @@
 module View exposing (..)
 
 
-import Html exposing (Attribute, Html, button, div, img, input, option, select, span, text)
+import Html exposing (Attribute, Html, button, div, img, input, label, option, select, span, text)
 import Html.Attributes exposing (attribute, height, src, style, width)
 import Html.Events exposing (on, onClick, onInput)
 import String exposing (fromInt)
@@ -14,128 +14,147 @@ view : Model -> Html Msg
 view model =
   case model of
     BeginGamePage playerName gameName ->
-      div []
-        [ div [] [text "Welcome to the card game 250!!"]
-        , div [] [text "Enter your display name:"]
-        , input [onInput UpdatePlayerName] [text playerName]
-        , div [] [text "Enter a name for the group:"]
-        , input [onInput UpdateGameName] [text gameName]
-        , button [onClick SendGameName] [text "Begin Game"]
-        ]
+      beginGamePageView playerName gameName
 
-    WaitingForPlayers ->
-      div [] [text "Waiting For Players"]
+    WaitingForPlayers playerNames gameName ->
+      waitingForPlayersView playerNames gameName
 
-    BiddingRound gameState bidders biddingData isBidding ->
+    BiddingRound gameName biddingRoundData ->
       let
-        me = getPlayer gameState.playerSet gameState.myIndex
-        highestBidderName =
-          if biddingData.highestBidder == gameState.myIndex
-            then "You"
-            else
-              getPlayer gameState.playerSet biddingData.highestBidder
-              |> .name
-        bidderNames = List.map (getPlayer gameState.playerSet >> .name) bidders
+        me = getPlayer biddingRoundData.playerSet biddingRoundData.myIndex
       in
-      div []
-        [ gameNameView gameState.gameName
-        , List.map (\i -> (i, Undecided)) allPlayerIndices
-          |> otherPlayersView gameState
-        , biddingZoneView highestBidderName bidderNames biddingData isBidding
-        , Just me
-          |> myCardsView Nothing (always []) gameState.myCards
-        ]
-
-    TrumpSelection selectionData _ gameState ->
-      let
-        me = getPlayer gameState.playerSet gameState.myIndex
-      in
-      trumpSelectionView selectionData gameState.myCards me
-
-    WaitingForTrump _ _ ->
-      div [] [text "Waiting for Bidding Winner to select trump"]
-
-    PlayRound round playState isActive ->
-      let
-        me = getPlayer playState.gameState.playerSet playState.gameState.myIndex
-
-        baseCard =
-          -- If I am the first bidder, I have no restrictions
-          if playState.firstPlayer == playState.gameState.myIndex
-            then
-              Nothing
-            else
-              -- If it is not my turn or I have already played a card, do not apply the blur effect
-              if isActiveTurn
-                then getCardFromHand playState.firstPlayer playState.hand
-                else Nothing
-
-        isActiveTurn = 
-          Maybe.map (\t -> isActive && t == playState.gameState.myIndex) playState.turn
-          |> Maybe.withDefault False
-
-        attrList card =
-          if isActiveTurn
-            then [SendCard card |> onClick]
-            else []
-      in
-      div []
-        [ gameNameView playState.gameState.gameName
-        , getPlayerStatuses playState.playersStatus
-          |> otherPlayersView playState.gameState
-        , staticInfoView playState round
-        , playAreaView playState.hand playState.gameState.myIndex
-        , Just me
-          |> myCardsView baseCard attrList playState.gameState.myCards
-        ]
-
-
-myCardsView : Maybe Card -> (Card -> List (Attribute Msg)) -> List Card -> Maybe Player -> Html Msg
-myCardsView maybeBaseCard oldAttrList myCards maybeMe =
-  let
-    scoreView = 
-      case maybeMe of
-        Just me ->
-          [ div
-            [ attribute "class" "myScores" ]
-            [ div [] [ "This game's score: " ++ fromInt me.gameScore |> text ]
-            , div [] [ "Total Score: " ++ fromInt me.totalScore |> text ]
+      div
+        [attribute "class" "biddingRoundView"]
+        [ div
+            [attribute "class" "biddingRoundSidebar"]
+            [ gameNameView gameName
+            , biddingZoneView biddingRoundData
             ]
-          ]
+        , div
+            [attribute "class" "biddingRoundContent"]
+            [ List.map (\i -> (i, Undecided)) allPlayerIndices
+              |> otherPlayersView biddingRoundData.myIndex biddingRoundData.playerSet
+            , div [attribute "class" "filler"] []
+            , myCardsView RoundFinished biddingRoundData.myCards me
+            ]
+        ]
 
-        Nothing ->
-          []
+    TrumpSelection gameName trumpSelectionData ->
+      trumpSelectionView trumpSelectionData
 
+    WaitingForTrump gameName biddingRoundData ->
+      div
+        [attribute "class" "waitingForTrumpView"]
+        [ "Waiting for "
+            ++ (getPlayer biddingRoundData.playerSet biddingRoundData.highestBidder).name
+            ++ " to select trump. Bid Amount: "
+            ++ fromInt biddingRoundData.highestBid
+          |> text
+        ]
+
+    PlayRound gameName playRoundData ->
+      let
+        me = getPlayer playRoundData.trumpSelectionData.playerSet playRoundData.trumpSelectionData.myIndex
+      in
+      div
+        [attribute "class" "playRoundView"]
+        [ div
+            [attribute "class" "playRoundSidebar"]
+            [ gameNameView gameName
+            , staticInfoView playRoundData.trumpSelectionData playRoundData.turnStatus playRoundData.roundIndex
+            ]
+        , div
+            [attribute "class" "playRoundContent"]
+            [ getPlayerStatuses playRoundData.playersStatus
+              |> otherPlayersView playRoundData.trumpSelectionData.myIndex playRoundData.trumpSelectionData.playerSet
+            , playAreaView playRoundData.hand playRoundData.trumpSelectionData.myIndex
+            , myCardsView playRoundData.turnStatus playRoundData.trumpSelectionData.myCards me
+            ]
+        ]
+
+
+beginGamePageView : String -> String -> Html Msg
+beginGamePageView playerName gameName =
+  div
+    [attribute "class" "beginGame"]
+    [ div
+        [attribute "class" "beginGameHeader"]
+        [text "Welcome to the card game 250!!"]
+    , div []
+        [ label [attribute "for" ""] [text "Enter your display name:"]
+        , input [onInput UpdatePlayerName] [text playerName]
+        ]
+    , div []
+        [ label [attribute "for" ""] [text "Enter a name for the group:"]
+        , input [onInput UpdateGameName] [text gameName]
+        ]
+    , div
+        [ attribute "class" "beginGameButton"
+        , onClick SendGameName
+        ]
+        [text "Begin Game"]
+    ]
+
+
+waitingForPlayersView : List String -> String -> Html Msg
+waitingForPlayersView playerNames gameName =
+  let
+    player name = div [] [text name]
+    players = List.map player playerNames
+  in
+  [ div
+      [attribute "class" "waitingForPlayersHeader"]
+      [ "Waiting For 6 Players in " ++ gameName
+        |> text
+      ]
+  , div
+      []
+      [text "Current Players:"]
+  ]
+  ++ players
+  |> div
+      [attribute "class" "waitingForPlayers"]
+
+
+myCardsView : TurnStatus -> List Card -> Player -> Html Msg
+myCardsView turnStatus myCards me =
+  let
     cardList =
       let
         attrList card =
-          case maybeBaseCard of
-            Just baseCard ->
+          case turnStatus of
+            FirstAndMyTurn ->
+              [SendCard card |> onClick]
+            NotFirstAndMyTurn baseCard ->
               let
                 hasValidCard =
                   List.any (\c -> c.suit == baseCard.suit) myCards
               in
               if hasValidCard && card.suit /= baseCard.suit
                 then [attribute "class" "blurCard"]
-                else oldAttrList card
+                else [SendCard card |> onClick]
 
-            Nothing ->
-              oldAttrList card
+            _ ->
+              []
       in
       List.map (\card -> cardView (attrList card) card) myCards
 
   in
-  [ div
-      [ attribute "class" "myName" ]
-      [ text "Your cards" ]
+  div
+    [ attribute "class" "myCardsContainer" ]
+    [ div
+        [ attribute "class" "myName" ]
+        [ text "Your cards" ]
     , cardList
       |> div
         [ attribute "class" "myCards" ]
-  ]
-  ++
-  scoreView
-  |> div
-    [ attribute "class" "myCardsContainer" ]
+    , div
+        [ attribute "class" "myScores" ]
+        [ div [] [ "This game's score: " ++ fromInt me.gameScore |> text ]
+        , div [] [ "Total Score: " ++ fromInt me.totalScore |> text ]
+        ]
+    ]
+  
 
 
 gameNameView : String -> Html Msg
@@ -145,15 +164,15 @@ gameNameView name =
     [ text name ]
 
 
-otherPlayersView : GameState -> List (PlayerIndex, PlayerStatus) -> Html Msg
-otherPlayersView gameState allStatuses =
+otherPlayersView : PlayerIndex -> PlayerSet -> List (PlayerIndex, PlayerStatus) -> Html Msg
+otherPlayersView myIndex playerSet allStatuses =
   let
     myStatus =
-      lookup gameState.myIndex allStatuses
+      lookup myIndex allStatuses
       |> Maybe.withDefault Undecided
 
     isAllied playerStatus =
-      -- If my own status is undecided, then I don't know anyone else's status, return nothing
+      -- If my own status is undecided(bidding is going on), then I don't know anyone else's status, return nothing
       -- If a player's status is undecided, also return nothing
       if myStatus == Undecided || playerStatus == Undecided
         then Nothing
@@ -163,7 +182,7 @@ otherPlayersView gameState allStatuses =
     rotateOtherPlayers allPlayers =
       case allPlayers of
         (x :: xs) ->
-          if Tuple.first x == gameState.myIndex
+          if Tuple.first x == myIndex
             then xs
             else xs ++ [x] |> rotateOtherPlayers
 
@@ -172,7 +191,7 @@ otherPlayersView gameState allStatuses =
 
     otherPlayers =
       rotateOtherPlayers allStatuses
-      |> List.map (Tuple.mapBoth (getPlayer gameState.playerSet) isAllied)
+      |> List.map (Tuple.mapBoth (getPlayer playerSet) isAllied)
   in
   otherPlayers
     |> List.indexedMap playerView
@@ -183,11 +202,18 @@ otherPlayersView gameState allStatuses =
         [ attribute "class" "playersContainer" ]
 
 
-biddingZoneView : String -> List String -> IBiddingData -> Bool -> Html Msg
-biddingZoneView highestBidderName bidderNames biddingData isBidding =
+biddingZoneView : BiddingRoundData -> Html Msg
+biddingZoneView biddingRoundData =
   let
+    highestBidderName =
+      if biddingRoundData.highestBidder == biddingRoundData.myIndex
+        then "You"
+        else
+          getPlayer biddingRoundData.playerSet biddingRoundData.highestBidder
+          |> .name
+    bidderNames = List.map (getPlayer biddingRoundData.playerSet >> .name) biddingRoundData.bidders
     biddingHtml =
-      if isBidding
+      if biddingRoundData.amIBidding
         then
           [ div
               [attribute "class" "bidButtonContainer"]
@@ -201,15 +227,17 @@ biddingZoneView highestBidderName bidderNames biddingData isBidding =
                   , onClick BidPlus10
                   ]
                   [text "+10"]
+              , button
+                  [ attribute "class" "quitBiddingButton"
+                  , onClick QuitBidding
+                  ]
+                  [text "Quit Bidding"]
               ]
-          , button
-              [ attribute "class" "quitBiddingButton"
-              , onClick QuitBidding
-              ]
-              [text "Quit Bidding"]
           ]
         else
-          [ div [] [text "You can't bid anymore."]
+          [ div
+              [attribute "class" "bidButtonContainer"]
+              [text "You can't bid anymore."]
           ]
     bidders =
       let bidder name = span [] [text name]
@@ -221,7 +249,7 @@ biddingZoneView highestBidderName bidderNames biddingData isBidding =
       [text "Highest Bid"]
   , span
       [attribute "class" "bidValue"]
-      [fromInt biddingData.highestBid |> text]
+      [fromInt biddingRoundData.highestBid |> text]
   , span []
       ["(" ++ highestBidderName ++ ")" |> text]
   ]
@@ -240,12 +268,14 @@ biddingZoneView highestBidderName bidderNames biddingData isBidding =
 
 
 
-trumpSelectionView : SelectionData -> List Card -> Player -> Html Msg
-trumpSelectionView selectionData myCards me =
+trumpSelectionView : TrumpSelectionData -> Html Msg
+trumpSelectionView trumpSelectionData =
   let
+    me = getPlayer trumpSelectionData.playerSet trumpSelectionData.myIndex
+
     trumpView suit =
       let
-        isSelected = suit == selectionData.selectedTrump
+        isSelected = suit == trumpSelectionData.selectionData.trump
 
         attrList = [SelectTrump suit |> onClick] ++
           if isSelected
@@ -271,32 +301,14 @@ trumpSelectionView selectionData myCards me =
           |> cardView attrList
         ]
 
-    filteredCards = List.filter (\card -> List.member card myCards |> not) allCards
-
-    isHelperCard card = isHelper1 card || isHelper2 card
-
-    isHelper1 card =
-      case selectionData.helper1 of
-        Just c1 ->
-          card == c1
-
-        Nothing ->
-          False
-
-    isHelper2 card =
-      case selectionData.helper2 of
-        Just c2 ->
-          card == c2
-
-        Nothing ->
-          False
+    filteredCards = List.filter (\card -> List.member card trumpSelectionData.myCards |> not) allCards
 
     helperCardAttrList card =
       [ SelectHelper card
         |> onClick
       ]
       ++
-      if isHelperCard card
+      if isPlayerHelper card trumpSelectionData.selectionData
         then [attribute "class" "selectedHelper"]
         else [attribute "class" "helper"]
 
@@ -335,51 +347,65 @@ trumpSelectionView selectionData myCards me =
           ]
           [text "Proceed"]
         ]
-    , myCardsView Nothing (always []) myCards Nothing
+    , myCardsView RoundFinished trumpSelectionData.myCards me
     ]
 
 
-staticInfoView : PlayState -> Round -> Html Msg
-staticInfoView playState round =
+staticInfoView : TrumpSelectionData -> TurnStatus -> Round -> Html Msg
+staticInfoView trumpSelectionData turnStatus round =
   let
     biddingInfoView =
       div
         [ attribute "class" "biddingInfo" ]
         [ span
             [attribute "class" "bidValueLabel"]
-            [pronounify playState.biddingData.biddingWinner ++ " bid" |> text]
+            [pronounify trumpSelectionData.bidder ++ " bid" |> text]
         , span
             [attribute "class" "bidValue"]
-            [fromInt playState.biddingData.winningBid |> text]
+            [fromInt trumpSelectionData.bid |> text]
         ]
 
     pronounify playerIndex =
-      if playerIndex == playState.gameState.myIndex
+      if playerIndex == trumpSelectionData.myIndex
         then "Your"
         else
-          getPlayer playState.gameState.playerSet playerIndex
+          getPlayer trumpSelectionData.playerSet playerIndex
           |> .name
             |> \n -> n ++ "'s"
 
-    helper1View =
-      playState.selectionData.helper1
-      |> Maybe.map (cardView [] >> List.singleton)
-      |> Maybe.withDefault []
-
-    helper2View =
-      playState.selectionData.helper2
-      |> Maybe.map (cardView [] >> List.singleton)
-      |> Maybe.withDefault []
+    helperView helper =
+      helper
+      |> cardView []
 
     helpers =
-      helper1View ++ helper2View
+      List.map helperView trumpSelectionData.selectionData.helpers
 
     turnView =
-      Maybe.map (\t -> pronounify t ++ " Turn") playState.turn
-      |> Maybe.withDefault "Waiting for round to finish.."
+      case turnStatus of
+        FirstAndNotMyTurn player ->
+          pronounify player ++ " Turn"
+
+        NotFirstAndNotMyTurn player _ ->
+          pronounify player ++ " Turn"
+
+        RoundFinished ->
+          "Waiting for round to finish.."
+
+        GameFinished ->
+          "Waiting for game to finish.."
+
+        _ ->
+          pronounify trumpSelectionData.myIndex ++ " Turn"
+
 
     roundView =
-      showRound False round
+      case turnStatus of
+        GameFinished ->
+          ""
+
+        _ ->
+          showRound False round
+
 
   in
   div
@@ -388,7 +414,7 @@ staticInfoView playState round =
     , div 
         [attribute "class" "miniTrump"]
         [ span [] [text "Trump"]
-        , Card Ace playState.selectionData.selectedTrump |> cardView []
+        , Card Ace trumpSelectionData.selectionData.trump |> cardView []
         ]
     , div
         [attribute "class" "miniHelper"]

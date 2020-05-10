@@ -1,0 +1,22 @@
+{
+  "name": "250-ui",
+  "version": "0.0.1",
+  "description": "A UI for the card game 250.",
+  "main": "Main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:elm": "elm make src/Main.elm --output Main.js",
+    "build": "npm run build:elm && npm run minifyJs",
+    "minifyJs": "uglifyjs Main.js --output Main.min.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ohri-anurag/250-UI.git"
+  },
+  "author": "Anurag Ohri",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/ohri-anurag/250-UI/issues"
+  },
+  "homepage": "https://github.com/ohri-anurag/250-UI#readme"
+}
