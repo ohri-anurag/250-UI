@@ -21,7 +21,7 @@ view model =
 
     BiddingRound gameName biddingRoundData ->
       let
-        me = getPlayer biddingRoundData.playerSet biddingRoundData.myIndex
+        me = getPlayer biddingRoundData.playerSet biddingRoundData.myData.myIndex
       in
       div
         [attribute "class" "biddingRoundView"]
@@ -33,9 +33,9 @@ view model =
         , div
             [attribute "class" "biddingRoundContent"]
             [ List.map (\i -> (i, Undecided)) allPlayerIndices
-              |> otherPlayersView biddingRoundData.myIndex biddingRoundData.playerSet
+              |> otherPlayersView biddingRoundData.myData.myIndex biddingRoundData.playerSet
             , div [attribute "class" "filler"] []
-            , myCardsView RoundFinished biddingRoundData.myCards me
+            , myCardsView RoundFinished biddingRoundData.myData.myCards me
             ]
         ]
 
@@ -46,29 +46,30 @@ view model =
       div
         [attribute "class" "waitingForTrumpView"]
         [ "Waiting for "
-            ++ (getPlayer biddingRoundData.playerSet biddingRoundData.highestBidder).name
+            ++ (getPlayer biddingRoundData.playerSet biddingRoundData.biddingData.highestBidder).name
             ++ " to select trump. Bid Amount: "
-            ++ fromInt biddingRoundData.highestBid
+            ++ fromInt biddingRoundData.biddingData.highestBid
           |> text
         ]
 
     PlayRound gameName playRoundData ->
       let
-        me = getPlayer playRoundData.trumpSelectionData.playerSet playRoundData.trumpSelectionData.myIndex
+        myIndex = playRoundData.myData.myIndex
+        me = getPlayer playRoundData.playerSet myIndex
       in
       div
         [attribute "class" "playRoundView"]
         [ div
             [attribute "class" "playRoundSidebar"]
             [ gameNameView gameName
-            , staticInfoView playRoundData.trumpSelectionData playRoundData.turnStatus playRoundData.roundIndex
+            , staticInfoView playRoundData playRoundData.turnStatus playRoundData.roundIndex
             ]
         , div
             [attribute "class" "playRoundContent"]
             [ getPlayerStatuses playRoundData.playersStatus
-              |> otherPlayersView playRoundData.trumpSelectionData.myIndex playRoundData.trumpSelectionData.playerSet
-            , playAreaView playRoundData.hand playRoundData.trumpSelectionData.myIndex
-            , myCardsView playRoundData.turnStatus playRoundData.trumpSelectionData.myCards me
+              |> otherPlayersView myIndex playRoundData.playerSet
+            , playAreaView playRoundData.hand myIndex
+            , myCardsView playRoundData.turnStatus playRoundData.myData.myCards me
             ]
         ]
 
@@ -206,10 +207,10 @@ biddingZoneView : BiddingRoundData -> Html Msg
 biddingZoneView biddingRoundData =
   let
     highestBidderName =
-      if biddingRoundData.highestBidder == biddingRoundData.myIndex
+      if biddingRoundData.biddingData.highestBidder == biddingRoundData.myData.myIndex
         then "You"
         else
-          getPlayer biddingRoundData.playerSet biddingRoundData.highestBidder
+          getPlayer biddingRoundData.playerSet biddingRoundData.biddingData.highestBidder
           |> .name
     bidderNames = List.map (getPlayer biddingRoundData.playerSet >> .name) biddingRoundData.bidders
     biddingHtml =
@@ -249,7 +250,7 @@ biddingZoneView biddingRoundData =
       [text "Highest Bid"]
   , span
       [attribute "class" "bidValue"]
-      [fromInt biddingRoundData.highestBid |> text]
+      [fromInt biddingRoundData.biddingData.highestBid |> text]
   , span []
       ["(" ++ highestBidderName ++ ")" |> text]
   ]
@@ -271,7 +272,7 @@ biddingZoneView biddingRoundData =
 trumpSelectionView : TrumpSelectionData -> Html Msg
 trumpSelectionView trumpSelectionData =
   let
-    me = getPlayer trumpSelectionData.playerSet trumpSelectionData.myIndex
+    me = getPlayer trumpSelectionData.playerSet trumpSelectionData.myData.myIndex
 
     trumpView suit =
       let
@@ -301,7 +302,7 @@ trumpSelectionView trumpSelectionData =
           |> cardView attrList
         ]
 
-    filteredCards = List.filter (\card -> List.member card trumpSelectionData.myCards |> not) allCards
+    filteredCards = List.filter (\card -> List.member card trumpSelectionData.myData.myCards |> not) allCards
 
     helperCardAttrList card =
       [ SelectHelper card
@@ -347,29 +348,29 @@ trumpSelectionView trumpSelectionData =
           ]
           [text "Proceed"]
         ]
-    , myCardsView RoundFinished trumpSelectionData.myCards me
+    , myCardsView RoundFinished trumpSelectionData.myData.myCards me
     ]
 
 
-staticInfoView : TrumpSelectionData -> TurnStatus -> Round -> Html Msg
-staticInfoView trumpSelectionData turnStatus round =
+staticInfoView : PlayRoundData -> TurnStatus -> Round -> Html Msg
+staticInfoView playRoundData turnStatus round =
   let
     biddingInfoView =
       div
         [ attribute "class" "biddingInfo" ]
         [ span
             [attribute "class" "bidValueLabel"]
-            [pronounify trumpSelectionData.bidder ++ " bid" |> text]
+            [pronounify playRoundData.biddingData.highestBidder ++ " bid" |> text]
         , span
             [attribute "class" "bidValue"]
-            [fromInt trumpSelectionData.bid |> text]
+            [fromInt playRoundData.biddingData.highestBid |> text]
         ]
 
     pronounify playerIndex =
-      if playerIndex == trumpSelectionData.myIndex
+      if playerIndex == playRoundData.myData.myIndex
         then "Your"
         else
-          getPlayer trumpSelectionData.playerSet playerIndex
+          getPlayer playRoundData.playerSet playerIndex
           |> .name
             |> \n -> n ++ "'s"
 
@@ -378,7 +379,7 @@ staticInfoView trumpSelectionData turnStatus round =
       |> cardView []
 
     helpers =
-      List.map helperView trumpSelectionData.selectionData.helpers
+      List.map helperView playRoundData.selectionData.helpers
 
     turnView =
       case turnStatus of
@@ -395,7 +396,7 @@ staticInfoView trumpSelectionData turnStatus round =
           "Waiting for game to finish.."
 
         _ ->
-          pronounify trumpSelectionData.myIndex ++ " Turn"
+          pronounify playRoundData.myData.myIndex ++ " Turn"
 
 
     roundView =
@@ -414,7 +415,7 @@ staticInfoView trumpSelectionData turnStatus round =
     , div 
         [attribute "class" "miniTrump"]
         [ span [] [text "Trump"]
-        , Card Ace trumpSelectionData.selectionData.trump |> cardView []
+        , Card Ace playRoundData.selectionData.trump |> cardView []
         ]
     , div
         [attribute "class" "miniHelper"]

@@ -93,26 +93,33 @@ type alias Hand =
   }
 
 
-type alias BiddingRoundData =
-  { playerSet : PlayerSet
-  , highestBid : Int
-  , highestBidder : PlayerIndex
-  , bidders : (List PlayerIndex)
-  , myIndex : PlayerIndex
-  , amIBidding : Bool
+type alias MyData =
+  { myIndex : PlayerIndex
   , myCards : List Card
+  }
+
+
+type alias BiddingData =
+  { highestBid : Int
+  , highestBidder : PlayerIndex
   , firstBidder : PlayerIndex
   }
 
 
+type alias BiddingRoundData =
+  { playerSet : PlayerSet           -- Player names and their scores
+  , biddingData : BiddingData       -- Highest bid and bidder
+  , bidders : (List PlayerIndex)    -- List of current bidders
+  , amIBidding : Bool               -- Quite clear
+  , myData : MyData                 -- My index and cards
+  }
+
+
 type alias TrumpSelectionData =
-  { selectionData : SelectionData
-  , bid : Int
-  , bidder : PlayerIndex
-  , playerSet : PlayerSet
-  , myIndex : PlayerIndex
-  , myCards : List Card
-  , firstBidder : PlayerIndex
+  { selectionData : SelectionData   -- Selected trump and helpers
+  , biddingData : BiddingData       -- Highest bid and bidder
+  , playerSet : PlayerSet           -- Player names and their scores
+  , myData : MyData                 -- My index and cards
   }
 
 
@@ -128,14 +135,16 @@ type TurnStatus
 
 
 type alias PlayRoundData =
-  { trumpSelectionData : TrumpSelectionData
-  , firstPlayer : PlayerIndex
-  , roundIndex : Round
-  , hand : Hand
-  , playersStatus : PlayerStatusSet
-  , helpersRevealed : Int
-  , bidder : PlayerIndex
-  , turnStatus : TurnStatus
+  { selectionData : SelectionData   -- Selected trump and helpers
+  , biddingData : BiddingData       -- Highest bid and bidder
+  , playerSet : PlayerSet           -- Player names and their scores
+  , myData : MyData                 -- My index and cards
+  , firstPlayer : PlayerIndex       -- Who plays the first card in a round?
+  , roundIndex : Round              -- Which round?
+  , hand : Hand                     -- Collection of cards played in the current round
+  , playersStatus : PlayerStatusSet -- Which players are my allies/enemies?
+  , helpersRevealed : Int           -- How many helpers have been revealed to me
+  , turnStatus : TurnStatus         -- Refer to TurnStatus
   }
 
 
@@ -234,15 +243,6 @@ allCards = List.concatMap (\cardValue -> List.map (Card cardValue) allSuits) all
 allPlayerIndices : List PlayerIndex
 allPlayerIndices = [Player1, Player2, Player3, Player4, Player5, Player6]
 
-
--- otherPlayers : GameState -> List Player
--- otherPlayers gameState =
---   let
---     playerSet = gameState.playerSet
---     allPlayers = getPlayers playerSet
---     me = getPlayer playerSet gameState.myIndex
---   in
---   List.filter (\p -> p /= me) allPlayers
 
 showSuit : Bool -> Suit -> String
 showSuit isPlural suit =
