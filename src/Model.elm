@@ -56,9 +56,6 @@ type PlayerIndex
 
 
 type alias Player =
-  --{ index : PlayerIndex
-  --, info : PlayerData
-  --}
   { totalScore : Int
   , gameScore : Int
   , name : String
@@ -73,57 +70,6 @@ type alias PlayerSet =
   , player5 : Player
   , player6 : Player
   }
-
-
-type alias GameState =
-  { playerSet : PlayerSet
-  , firstBidder : PlayerIndex           -- This person will play the first turn, and have the first chance at bidding.
-  , myIndex : PlayerIndex
-  , myCards : List Card
-  , gameName : String
-  }
-
-
-type BiddingData
-  = IntermediateBiddingData IBiddingData
-  | FinalBiddingData FBiddingData
-
-
-type alias IBiddingData =
-  { highestBidder : PlayerIndex
-  , highestBid : Int
-  }
-
-
-type alias FBiddingData =
-  { biddingWinner : PlayerIndex
-  , winningBid : Int
-  }
-
-
-type alias SelectionData =
-  { selectedTrump : Suit
-  , helper1 : Maybe Card
-  , helper2 : Maybe Card
-  }
-
-
-type alias PlayedCard =
-  { turn : PlayerIndex
-  , playedCard : Card
-  }
-
-
-type alias NextRoundData =
-  { firstPlayer : PlayerIndex
-  , playerSet : PlayerSet
-  }
-
-
-type RoundData
-  = PlayedCardData PlayedCard
-  | RoundFinishData NextRoundData
-  | GameFinishData GameState
 
 
 type Round
@@ -147,17 +93,6 @@ type alias Hand =
   }
 
 
-type alias PlayState =
-  { gameState : GameState
-  , biddingData : FBiddingData
-  , selectionData : SelectionData
-  , firstPlayer : PlayerIndex
-  , turn : Maybe PlayerIndex
-  , hand : Hand
-  , playersStatus : PlayerStatusSet
-  , helpersRevealed : Int
-  }
-
 type alias BiddingRoundData =
   { playerSet : PlayerSet
   , highestBid : Int
@@ -165,30 +100,59 @@ type alias BiddingRoundData =
   , bidders : (List PlayerIndex)
   , myIndex : PlayerIndex
   , amIBidding : Bool
-  , gameName : String
   , myCards : List Card
+  , firstBidder : PlayerIndex
   }
 
 
 type alias TrumpSelectionData =
-  { trump : Suit
-  , helper1 : Maybe Card
-  , helper2 : Maybe Card
+  { selectionData : SelectionData
   , bid : Int
+  , bidder : PlayerIndex
   , playerSet : PlayerSet
   , myIndex : PlayerIndex
-  , gameName : String
   , myCards : List Card
+  , firstBidder : PlayerIndex
+  }
+
+
+type TurnStatus
+  = FirstAndNotMyTurn PlayerIndex
+  | NotFirstAndNotMyTurn PlayerIndex Card
+  | FirstAndMyTurn
+  | FirstAndMyTurnOver
+  | NotFirstAndMyTurn Card
+  | NotFirstAndMyTurnOver Card
+  | RoundFinished
+  | GameFinished
+
+
+type alias PlayRoundData =
+  { trumpSelectionData : TrumpSelectionData
+  , firstPlayer : PlayerIndex
+  , roundIndex : Round
+  , hand : Hand
+  , playersStatus : PlayerStatusSet
+  , helpersRevealed : Int
+  , bidder : PlayerIndex
+  , turnStatus : TurnStatus
   }
 
 
 type Model
   = BeginGamePage String String
   | WaitingForPlayers (List String) String
-  | BiddingRound BiddingRoundData
-  | TrumpSelection TrumpSelectionData
-  | WaitingForTrump BiddingRoundData
-  | PlayRound Round PlayState Bool
+  | BiddingRound String BiddingRoundData
+  | TrumpSelection String TrumpSelectionData
+  | WaitingForTrump String BiddingRoundData
+  | PlayRound String PlayRoundData
+
+
+
+type alias SelectionData =
+  { trump : Suit
+  , helpers : List Card
+  }
 
 
 type SentMessage
@@ -202,6 +166,12 @@ type SentMessage
   | SendQuit
       String        -- Game Name
       PlayerIndex   -- My Index
+  | SentSelectionData
+      String        -- Game Name
+      SelectionData -- Selection Data
+  | PlayedCard
+      String        -- Game Name
+      Card          -- The card that was played by me
 
 
 type ReceivedMessage
@@ -219,25 +189,31 @@ type ReceivedMessage
       Int           -- Bid Amount
   | HasQuitBidding
       PlayerIndex   -- The player who quit bidding
+  | ReceivedSelectionData
+      SelectionData
+  | PlayCard
+      Card          -- The card that was played in the turn
+  | RoundData
+      PlayerIndex   -- Current round's winner, and next round's first player
+      Int           -- Score made in current round
+  | GameFinishedData
+      (List PlayerIndex)  -- Winning Team
+      Int                 -- Winning Team score
+  | NewGame
+      (List Card)         -- Cards for a new game
 
 
 type Msg
   = UpdatePlayerName String
   | UpdateGameName String
   | SendGameName
-  | BeginGame GameState
   | BidPlus5
   | BidPlus10
   | QuitBidding
-  | NewHighestBid PlayerIndex Int
-  | FinalBid FBiddingData GameState
   | SelectTrump Suit
   | SelectHelper Card
   | SendTrump
-  | StartGameplay PlayState
   | SendCard Card
-  | PlayCard Card PlayerIndex
-  | NextRound PlayerIndex PlayerSet
   | NoOp
   | SentMessageType SentMessage
   | ReceivedMessageType ReceivedMessage
@@ -259,14 +235,14 @@ allPlayerIndices : List PlayerIndex
 allPlayerIndices = [Player1, Player2, Player3, Player4, Player5, Player6]
 
 
-otherPlayers : GameState -> List Player
-otherPlayers gameState =
-  let
-    playerSet = gameState.playerSet
-    allPlayers = getPlayers playerSet
-    me = getPlayer playerSet gameState.myIndex
-  in
-  List.filter (\p -> p /= me) allPlayers
+-- otherPlayers : GameState -> List Player
+-- otherPlayers gameState =
+--   let
+--     playerSet = gameState.playerSet
+--     allPlayers = getPlayers playerSet
+--     me = getPlayer playerSet gameState.myIndex
+--   in
+--   List.filter (\p -> p /= me) allPlayers
 
 showSuit : Bool -> Suit -> String
 showSuit isPlural suit =
@@ -360,6 +336,28 @@ showRound isJson round =
       "Round" ++ if isJson then "8" else " 8"
 
 
+nextTurn : PlayerIndex -> PlayerIndex
+nextTurn playerIndex =
+  case playerIndex of
+    Player1 ->
+      Player2
+
+    Player2 ->
+      Player3
+
+    Player3 ->
+      Player4
+
+    Player4 ->
+      Player5
+
+    Player5 ->
+      Player6
+
+    Player6 ->
+      Player1
+
+
 nextRound : Round -> Round
 nextRound round =
   case round of
@@ -388,13 +386,6 @@ nextRound round =
       Round1
 
 
-initBiddingData : PlayerIndex -> IBiddingData
-initBiddingData playerIndex =
-  { highestBid = 150
-  , highestBidder = playerIndex
-  }
-
-
 initCards : List Card
 initCards =
   [ Card Ace Spade
@@ -413,36 +404,6 @@ newPlayer index =
   { totalScore = 0
   , gameScore = 0
   , name = showPlayerIndex index
-  }
-
-
-initGameState : GameState
-initGameState =
-  let
-    playerSet =
-      { player1 = newPlayer Player1
-      , player2 = newPlayer Player2
-      , player3 = newPlayer Player3
-      , player4 = newPlayer Player4
-      , player5 = newPlayer Player5
-      , player6 = newPlayer Player6
-      }
-  in
-  { playerSet = playerSet
-  , firstBidder = Player1
-  , myIndex = Player1
-  , myCards = initCards
-  , gameName = "250aadmi"
-  }
-
-
-initSelectionData : SelectionData
-initSelectionData =
-  { selectedTrump = Spade
-  , helper1 = Nothing
-  , helper2 = Nothing
-  --, helper1 = Just (Card Ace Spade)
-  --, helper2 = Just (Card Ace Heart)
   }
 
 
@@ -524,44 +485,68 @@ initPlayerStatusSet =
   }
 
 
-initPlayState : PlayState
-initPlayState = 
-  { gameState = initGameState
-  , biddingData =
-    { biddingWinner = Player1
-    , winningBid = 180
-    }
-  , selectionData = initSelectionData
-  , firstPlayer = Player1
-  , turn = Just Player1
-  , hand = emptyHand
-  , playersStatus = initPlayerStatusSet
-  , helpersRevealed = 0
+
+initPlayerSet : PlayerSet
+initPlayerSet =
+  { player1 = newPlayer Player1
+  , player2 = newPlayer Player2
+  , player3 = newPlayer Player3
+  , player4 = newPlayer Player4
+  , player5 = newPlayer Player5
+  , player6 = newPlayer Player6
   }
 
 
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
   ( BeginGamePage "" ""
-  -- ( BiddingRound
-  --   { playerSet =
-  --     { player1 = newPlayer Player1
-  --     , player2 = newPlayer Player2
-  --     , player3 = newPlayer Player3
-  --     , player4 = newPlayer Player4
-  --     , player5 = newPlayer Player5
-  --     , player6 = newPlayer Player6
-  --     }
+  -- ( BiddingRound "250aadmi"
+  --   { playerSet = initPlayerSet
   --   , highestBid = 150
   --   , highestBidder = Player1
   --   , bidders = allPlayerIndices
   --   , amIBidding = True
-  --   , gameName = "250aadmi"
   --   , myIndex = Player1
   --   , myCards = initCards
+  --   , firstBidder = Player1
   --   }
-  --( TrumpSelection initSelectionData { biddingWinner = Player1, winningBid = 180 } initGameState
-  --( PlayRound Round1 initPlayState True
+  -- ( TrumpSelection
+  --   { selectionData =
+  --     { trump = Spade
+  --     , helper1 = Nothing
+  --     , helper2 = Nothing
+  --     }
+  --   , bid = 180
+  --   , bidder = Player1
+  --   , playerSet = initPlayerSet
+  --   , myIndex = Player1
+  --   , gameName = "250aadmi"
+  --   , myCards = initCards
+  --   , firstBidder = Player1
+  --   }
+  -- ( PlayRound "250aadmi"
+  --   { trumpSelectionData = 
+  --     { selectionData =
+  --       { trump = Spade
+  --       , helpers = [Card Ace Spade, Card Ace Heart]
+  --       }
+  --     , bid = 180
+  --     , bidder = Player1
+  --     , playerSet = initPlayerSet
+  --     , myIndex = Player1
+  --     , myCards = initCards
+  --     , firstBidder = Player1
+  --     }
+  --   , firstPlayer = Player1
+  --   , roundIndex = Round1
+  --   , hand = emptyHand
+  --   , playersStatus = initPlayerStatusSet
+  --   , helpersRevealed = 0
+  --   , bidder = Player1
+  --   , turn = Just Player1
+  --   , haveIPlayed = False
+  --   , turnStatus = FirstAndMyTurn
+  --   }
   , Cmd.none
   )
 
@@ -609,6 +594,28 @@ getPlayer players index =
 
     Player6 ->
       players.player6
+
+
+updatePlayer : PlayerIndex -> (Player -> Player) -> PlayerSet -> PlayerSet
+updatePlayer playerIndex update players =
+  case playerIndex of
+    Player1 ->
+      { players | player1 = update players.player1 }
+
+    Player2 ->
+      { players | player2 = update players.player2 }
+
+    Player3 ->
+      { players | player3 = update players.player3 }
+
+    Player4 ->
+      { players | player4 = update players.player4 }
+
+    Player5 ->
+      { players | player5 = update players.player5 }
+
+    Player6 ->
+      { players | player6 = update players.player6 }
 
 
 getPlayers : PlayerSet -> List Player
@@ -669,53 +676,32 @@ setPlayerStatus playerIndex playerStatus playerStatusSet =
 
 isPlayerHelper : Card -> SelectionData -> Bool
 isPlayerHelper card selectionData =
-  let
-    isHelper helper = Maybe.withDefault False <| Maybe.map ((==) card) helper
-  in
-  isHelper selectionData.helper1 || isHelper selectionData.helper2
-
-
-containsHelper : List Card -> Maybe Card -> Bool
-containsHelper myCards helper = Maybe.withDefault False <| Maybe.map (\c -> List.member c myCards) helper
+  List.member card selectionData.helpers
 
 
 amIHelper : List Card -> SelectionData -> Bool
 amIHelper myCards selectionData =
-  containsHelper myCards selectionData.helper1 || containsHelper myCards selectionData.helper2
+  List.any (\h -> List.member h myCards) selectionData.helpers
 
 
 amITheOnlyHelper : List Card -> SelectionData -> Bool
 amITheOnlyHelper myCards selectionData =
-  let
-    amIHelper1 = containsHelper myCards selectionData.helper1
-    amIHelper2 = containsHelper myCards selectionData.helper2
-  in
-  -- Either I have both helpers
-  (amIHelper1 && amIHelper2)
-  ||
-  -- Bidder asked for only one helper and that is me
-  (maxHelpers selectionData == 1 && (amIHelper1 || amIHelper2))
+  case selectionData.helpers of
+    -- Bidder asked for only one helper and that is me
+    [card] ->
+      List.member card myCards
+
+    -- I have both helpers
+    [card1, card2] ->
+      List.member card1 myCards && List.member card2 myCards
+
+    _ ->
+      False
 
 
 maxHelpers : SelectionData -> Int
 maxHelpers selectionData =
-  let
-    isHelper helper = Maybe.withDefault 0 <| Maybe.map (always 1) helper
-  in
-  isHelper selectionData.helper1
-  + isHelper selectionData.helper2
-
-
---intToPlayerIndex : Int -> Maybe PlayerIndex
---intToPlayerIndex num =
---  case num of
---    1 -> Just Player1
---    2 -> Just Player2
---    3 -> Just Player3
---    4 -> Just Player4
---    5 -> Just Player5
---    6 -> Just Player6
---    _ -> Nothing
+  List.length selectionData.helpers
 
 
 lookup : a -> List (a, b) -> Maybe b

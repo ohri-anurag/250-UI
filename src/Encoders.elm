@@ -5,7 +5,6 @@ import Json.Encode as E
 
 
 import Model exposing (..)
--- import SharedData exposing (SentData(..))
 
 
 port messageSender : String -> Cmd msg
@@ -29,6 +28,12 @@ sentDataEncoder sentData =
 
     SendQuit gameName myIndex ->
       quitBiddingEncoder gameName myIndex
+
+    SentSelectionData gameName selectionData ->
+      selectionDataEncoder gameName selectionData.trump selectionData.helpers
+
+    PlayedCard gameName card ->
+      playedCardEncoder gameName card
 
 
 introDataEncoder : String -> String -> E.Value
@@ -65,46 +70,31 @@ quitBiddingEncoder gameName myIndex = E.object
   ]
 
 
-encodeBiddingData : String -> PlayerIndex -> Int -> E.Value
-encodeBiddingData gameName myIndex myBid = E.object
+selectionDataEncoder : String -> Suit -> List Card -> E.Value
+selectionDataEncoder gameName suit helpers = E.object
   [ ("gameName", E.string gameName)
-  , ("playerIndex", showPlayerIndex myIndex |> E.string)
-  , ("bid", E.int myBid)
-  ]
-
-
-encodeMaybe : (a -> E.Value) -> Maybe a -> E.Value
-encodeMaybe encoder maybe =
-  case maybe of
-    Just x ->
-      encoder x
-
-    Nothing ->
-      E.null
-
-
-encodeCard : Card -> E.Value
-encodeCard card = E.object
-  [ ("value", showCardValue card.value |> E.string)
-  , ("suit", showSuit False card.suit |> E.string)
-  ]
-
-
-encodeSelectionData : String -> SelectionData -> E.Value
-encodeSelectionData gameName selectionData = E.object
-  [ ("gameName", E.string gameName)
-  , ( "value"
-    , E.object
-      [ ("selectedTrump", showSuit False selectionData.selectedTrump |> E.string)
-      , ("helper1", encodeMaybe encodeCard selectionData.helper1)
-      , ("helper2", encodeMaybe encodeCard selectionData.helper2)
+  , ("value", E.object
+      [ ("tag", E.string "SelectionData")
+      , ("trump", showSuit False suit |> E.string)
+      , ("helpers", E.list cardEncoder helpers)
       ]
     )
   ]
 
 
-encodePlayedCard : String -> Card -> E.Value
-encodePlayedCard gameName card = E.object
+playedCardEncoder : String -> Card -> E.Value
+playedCardEncoder gameName card = E.object
   [ ("gameName", E.string gameName)
-  , ( "card", encodeCard card)
+  , ("value", E.object
+      [ ("tag", E.string "PlayedCard")
+      , ("playedCard", cardEncoder card)
+      ]
+    )
+  ]
+
+
+cardEncoder : Card -> E.Value
+cardEncoder card = E.object
+  [ ("value", showCardValue card.value |> E.string)
+  , ("suit", showSuit False card.suit |> E.string)
   ]

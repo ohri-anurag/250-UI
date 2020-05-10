@@ -5,7 +5,6 @@ import Json.Decode exposing (..)
 
 
 import Model exposing (..)
--- import SharedData exposing (ReceivedData(..))
 
 
 port messageReceiver : (String -> msg) -> Sub msg
@@ -77,6 +76,30 @@ receivedDataDecoder =
         playerIndexDecoder
         |> field "hasQuitBidding"
         |> map HasQuitBidding
+
+      "SelectionData" ->
+        map2 SelectionData
+          (field "trump" suitDecoder)
+          (list cardDecoder |> field "helpers")
+        |> andThen (ReceivedSelectionData >> succeed)
+
+      "PlayCard" ->
+        field "card" cardDecoder
+        |> map PlayCard
+
+      "RoundData" ->
+        map2 RoundData
+          (field "roundWinner" playerIndexDecoder)
+          (field "roundScore" int)
+
+      "GameFinishedData" ->
+        map2 GameFinishedData
+          (field "winningTeam" (list playerIndexDecoder))
+          (field "gameScore" int)
+
+      "NewGame" ->
+        field "cards" cardsDecoder
+        |> map NewGame
 
       _ ->
         "Unknown tag received: " ++ tag |> fail
@@ -191,11 +214,6 @@ playerIndexDecoder =
   )
 
 
-playerDecoder : Decoder Player
-playerDecoder =
-  map3 Player (field "totalScore" int) (field "gameScore" int) (field "name" string)
-
-
 playerNameSetDecoder : Decoder PlayerNameSet
 playerNameSetDecoder =
   map6 PlayerNameSet
@@ -205,69 +223,3 @@ playerNameSetDecoder =
     (field "name4" string)
     (field "name5" string)
     (field "name6" string)
-
-
-playerSetDecoder : Decoder PlayerSet
-playerSetDecoder =
-  map6 PlayerSet
-    (field "player1" playerDecoder)
-    (field "player2" playerDecoder)
-    (field "player3" playerDecoder)
-    (field "player4" playerDecoder)
-    (field "player5" playerDecoder)
-    (field "player6" playerDecoder)
-
-
-gameStateDecoder : Decoder GameState
-gameStateDecoder = map5 GameState
-  (field "playerSet" playerSetDecoder)
-  (field "firstBidder" playerIndexDecoder)
-  (field "myIndex" playerIndexDecoder)
-  (field "myCards" cardsDecoder)
-  (field "gameId" string)
-
-
-iBiddingDataDecoder : Decoder IBiddingData
-iBiddingDataDecoder = map2 IBiddingData
-  (field "highestBidder" playerIndexDecoder)
-  (field "highestBid" int)
-
-
-fBiddingDataDecoder : Decoder FBiddingData
-fBiddingDataDecoder = map2 FBiddingData
-  (field "biddingWinner" playerIndexDecoder)
-  (field "winningBid" int)
-
-
-biddingDataDecoder : Decoder BiddingData
-biddingDataDecoder = oneOf
-  [ map IntermediateBiddingData iBiddingDataDecoder
-  , map FinalBiddingData fBiddingDataDecoder
-  ]
-
-
-selectionDataDecoder : Decoder SelectionData
-selectionDataDecoder = map3 SelectionData
-  (field "selectedTrump" suitDecoder)
-  (nullable cardDecoder |> field "helper1")
-  (nullable cardDecoder |> field "helper2")
-
-
-playedCardDecoder : Decoder PlayedCard
-playedCardDecoder = map2 PlayedCard
-  (field "turn" playerIndexDecoder)
-  (field "playedCard" cardDecoder)
-
-
-nextRoundDataDecoder : Decoder NextRoundData
-nextRoundDataDecoder = map2 NextRoundData
-  (field "firstPlayer" playerIndexDecoder)
-  (field "playerSet" playerSetDecoder)
-
-
-roundDataDecoder : Decoder RoundData
-roundDataDecoder = oneOf
-  [ map PlayedCardData playedCardDecoder
-  , map RoundFinishData nextRoundDataDecoder
-  , map GameFinishData gameStateDecoder
-  ]

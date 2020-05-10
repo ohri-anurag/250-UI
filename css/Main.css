@@ -5,7 +5,7 @@
   text-align: center;
 }
 
-.beginGame, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView {
+.beginGame, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView {
   position: absolute;
   width: 100%;
   font-size: 24px;
@@ -47,18 +47,18 @@
   cursor: pointer;
 }
 
-.biddingRoundView {
+.biddingRoundView, .playRoundView {
   height: 100%;
   display: flex;
 }
 
-.biddingRoundSidebar {
+.biddingRoundSidebar, .playRoundSidebar {
   width: 10%;
   display: flex;
   flex-direction: column;
 }
 
-.biddingRoundContent {
+.biddingRoundContent, .playRoundContent {
   width: 90%;
   display: flex;
   flex-direction: column;
@@ -79,6 +79,7 @@
   font-size: 18px;
   margin-top: 125%;
   margin-left: 20px;
+  height: 50%;
 }
 
 .bidValueLabel {
@@ -87,6 +88,7 @@
 
 .bidButtonContainer {
   margin-top: 20%;
+  height: 25%;
 }
 
 .bidButton {
@@ -104,7 +106,7 @@
   width: 100%;
   /* margin-top: 20px; */
   display: flex;
-  height: 70%;
+  height: 25%;
 }
 
 .players {
@@ -174,7 +176,6 @@
 
 .myName {
   margin: 0 auto;
-  font-size: 24px;
 }
 
 .myCards {
@@ -204,16 +205,14 @@
 }
 
 .trumpContainer {
-  position: fixed;
-  top: 0;
-  width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
 }
 
 .trumpBox {
   width: 100%;
-  height: 80%;
+  height: 70%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -356,16 +355,17 @@
   font-size: 32px;
 }
 
-.playArea {
-  width: 60%;
+.playArea, .filler {
+  width: 70%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  height: 45%;
 }
 
 .playerCards {
   display: flex;
-  margin: 80px auto;
+  margin: 0 auto;
 }
 
 .yetToPlay, .playerCard {
@@ -374,7 +374,7 @@
   border-width: 2px;
   border-style: solid;
   border-radius: 6px;
-  margin: 0 60px;
+  margin: 40px 60px;
 }
 
 .yetToPlay span {
@@ -388,7 +388,7 @@
 
 .p5 {
   border-color: black;
-  margin: 0 auto;
+  margin: 40px auto;
 }
 
 .blurCard {
