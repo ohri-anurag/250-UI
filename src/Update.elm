@@ -455,15 +455,10 @@ handleReceivedMessages receivedMessage model =
                   }
                 ) playerSet
               ) playRoundData.playerSet allPlayerIndices
-
-            -- updatePlayerSet trumpSelectionData =
-            --   { trumpSelectionData
-            --   | playerSet = updatedPlayerScores
-            --   }
           in
           ( PlayRound gameName
             { playRoundData
-            | playerSet = updatedPlayerScores-- updatePlayerSet playRoundData
+            | playerSet = updatedPlayerScores
             }
           , Cmd.none
           )
@@ -474,9 +469,16 @@ handleReceivedMessages receivedMessage model =
     NewGame cards ->
       case model of
         PlayRound gameName playRoundData ->
+          let
+            nextFirstBidder = nextTurn playRoundData.biddingData.firstBidder
+          in
           ( BiddingRound gameName
             { playerSet = playRoundData.playerSet
-            , biddingData = playRoundData.biddingData
+            , biddingData =
+              { highestBid = 150
+              , highestBidder = nextFirstBidder
+              , firstBidder = nextFirstBidder
+              }
             , bidders = allPlayerIndices
             , myData =
               { myIndex = playRoundData.myData.myIndex
