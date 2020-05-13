@@ -218,16 +218,19 @@ biddingZoneView biddingRoundData =
         then
           [ div
               [attribute "class" "bidButtonContainer"]
-              [ button
-                  [ attribute "class" "bidButton"
-                  , onClick BidPlus5
+              [ div
+                  [attribute "class" "increaseBidButtons"]
+                  [ button
+                      [ attribute "class" "bidButton"
+                      , onClick BidPlus5
+                      ]
+                      [text "+5"]
+                  , button
+                      [ attribute "class" "bidButton"
+                      , onClick BidPlus10
+                      ]
+                      [text "+10"]
                   ]
-                  [text "+5"]
-              , button
-                  [ attribute "class" "bidButton"
-                  , onClick BidPlus10
-                  ]
-                  [text "+10"]
               , button
                   [ attribute "class" "quitBiddingButton"
                   , onClick QuitBidding

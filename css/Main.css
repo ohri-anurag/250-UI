@@ -79,7 +79,6 @@
   font-size: 18px;
   margin-top: 125%;
   margin-left: 20px;
-  height: 50%;
 }
 
 .bidValueLabel {
@@ -87,26 +86,33 @@
 }
 
 .bidButtonContainer {
-  margin-top: 20%;
-  height: 25%;
+  margin-top: 20px;
+}
+
+.increaseBidButtons {
+  display: flex;
+  justify-content: space-around;
+  width: 70%;
+  margin: 0 auto;
 }
 
 .bidButton {
-  margin: 10px;
   padding: 10px;
   font-size: 15px;
 }
 
 .quitBiddingButton {
+  margin-top: 10px;
   padding: 10px;
   font-size: 15px;
+  width: 80%;
 }
 
 .playersContainer {
   width: 100%;
-  /* margin-top: 20px; */
   display: flex;
   height: 25%;
+  min-height: 240px;
 }
 
 .players {

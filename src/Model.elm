@@ -502,13 +502,17 @@ initModel _ =
   ( BeginGamePage "" ""
   -- ( BiddingRound "250aadmi"
   --   { playerSet = initPlayerSet
-  --   , highestBid = 150
-  --   , highestBidder = Player1
+  --   , biddingData =
+  --     { highestBid = 150
+  --     , highestBidder = Player1
+  --     , firstBidder = Player1
+  --     }
   --   , bidders = allPlayerIndices
   --   , amIBidding = True
-  --   , myIndex = Player1
-  --   , myCards = initCards
-  --   , firstBidder = Player1
+  --   , myData =
+  --     {myIndex = Player1
+  --     , myCards = initCards
+  --     }
   --   }
   -- ( TrumpSelection
   --   { selectionData =
