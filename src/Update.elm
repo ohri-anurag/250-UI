@@ -264,13 +264,9 @@ handleReceivedMessages receivedMessage model =
           in
           ( PlayRound gameName
             { selectionData = trumpSelectionData.selectionData
-
             , biddingData = trumpSelectionData.biddingData
-
             , playerSet = trumpSelectionData.playerSet
-
             , myData = trumpSelectionData.myData
-
             , firstPlayer = firstBidder
             , roundIndex = Round1
             , hand = emptyHand
@@ -340,10 +336,10 @@ handleReceivedMessages receivedMessage model =
                   )
 
                 NotFirstAndNotMyTurn player baseCard ->
-                  ( if nextTurn player == myIndex
-                      then NotFirstAndMyTurn baseCard
-                      else if nextTurn player == playRoundData.firstPlayer
-                        then RoundFinished
+                  ( if nextTurn player == playRoundData.firstPlayer
+                      then RoundFinished
+                      else if nextTurn player == myIndex
+                        then NotFirstAndMyTurn baseCard
                         else NotFirstAndNotMyTurn (nextTurn player) baseCard
                   , player
                   )
