@@ -502,7 +502,8 @@ sendIncreasedBidMessage model delta =
             | amIBidding = False
             }
           else model
-      , IncreaseBid gameName biddingRoundData.myData.myIndex newBid
+      , min newBid 250
+        |> IncreaseBid gameName biddingRoundData.myData.myIndex
         |> sendMessage
       )
 

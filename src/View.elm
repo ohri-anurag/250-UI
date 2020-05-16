@@ -213,6 +213,23 @@ biddingZoneView biddingRoundData =
           getPlayer biddingRoundData.playerSet biddingRoundData.biddingData.highestBidder
           |> .name
     bidderNames = List.map (getPlayer biddingRoundData.playerSet >> .name) biddingRoundData.bidders
+    buttons =
+      button
+        [ attribute "class" "bidButton"
+        , onClick BidPlus5
+        ]
+        [text "+5"]
+      ::
+      if biddingRoundData.biddingData.highestBid > 240
+        then
+        []
+        else
+        [ button
+            [ attribute "class" "bidButton"
+            , onClick BidPlus10
+            ]
+            [text "+10"]
+        ]
     biddingHtml =
       if biddingRoundData.amIBidding
         then
@@ -220,17 +237,7 @@ biddingZoneView biddingRoundData =
               [attribute "class" "bidButtonContainer"]
               [ div
                   [attribute "class" "increaseBidButtons"]
-                  [ button
-                      [ attribute "class" "bidButton"
-                      , onClick BidPlus5
-                      ]
-                      [text "+5"]
-                  , button
-                      [ attribute "class" "bidButton"
-                      , onClick BidPlus10
-                      ]
-                      [text "+10"]
-                  ]
+                  buttons
               , button
                   [ attribute "class" "quitBiddingButton"
                   , onClick QuitBidding
