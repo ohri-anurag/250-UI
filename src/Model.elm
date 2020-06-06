@@ -149,7 +149,7 @@ type alias PlayRoundData =
 
 
 type Model
-  = BeginGamePage String String
+  = BeginGamePage String String String
   | WaitingForPlayers (List String) String
   | BiddingRound String BiddingRoundData
   | TrumpSelection String TrumpSelectionData
@@ -166,6 +166,7 @@ type alias SelectionData =
 
 type SentMessage
   = IntroData
+      String    -- Player Id
       String    -- Player name
       String    -- Game name
   | IncreaseBid
@@ -213,7 +214,8 @@ type ReceivedMessage
 
 
 type Msg
-  = UpdatePlayerName String
+  = UpdatePlayerId String
+  | UpdatePlayerName String
   | UpdateGameName String
   | SendGameName
   | BidPlus5
@@ -499,7 +501,7 @@ initPlayerSet =
 
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
-  ( BeginGamePage "" ""
+  ( BeginGamePage "" "" ""
   -- ( BiddingRound "250aadmi"
   --   { playerSet = initPlayerSet
   --   , biddingData =

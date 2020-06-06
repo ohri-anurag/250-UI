@@ -13,8 +13,8 @@ import Model exposing (..)
 view : Model -> Html Msg
 view model =
   case model of
-    BeginGamePage playerName gameName ->
-      beginGamePageView playerName gameName
+    BeginGamePage playerId playerName gameName ->
+      beginGamePageView playerId playerName gameName
 
     WaitingForPlayers playerNames gameName ->
       waitingForPlayersView playerNames gameName
@@ -74,19 +74,23 @@ view model =
         ]
 
 
-beginGamePageView : String -> String -> Html Msg
-beginGamePageView playerName gameName =
+beginGamePageView : String -> String -> String -> Html Msg
+beginGamePageView playerId playerName gameName =
   div
     [attribute "class" "beginGame"]
     [ div
         [attribute "class" "beginGameHeader"]
         [text "Welcome to the card game 250!!"]
     , div []
-        [ label [attribute "for" ""] [text "Enter your display name:"]
+        [ label [] [text "Enter your id(this will be used if you get disconnected):"]
+        , input [onInput UpdatePlayerId] [text playerId]
+        ]
+    , div []
+        [ label [] [text "Enter your display name:"]
         , input [onInput UpdatePlayerName] [text playerName]
         ]
     , div []
-        [ label [attribute "for" ""] [text "Enter a name for the group:"]
+        [ label [] [text "Enter a name for the group:"]
         , input [onInput UpdateGameName] [text gameName]
         ]
     , div

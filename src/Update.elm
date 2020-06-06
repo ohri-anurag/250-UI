@@ -11,25 +11,33 @@ update msg model =
   case msg of
     UpdateGameName str ->
       case model of
-        BeginGamePage playerName _ ->
-          (BeginGamePage playerName str, Cmd.none)
+        BeginGamePage playerId playerName _ ->
+          (BeginGamePage playerId playerName str, Cmd.none)
 
         _ ->
           (model, Cmd.none)
 
     UpdatePlayerName str ->
       case model of
-        BeginGamePage _ gameName ->
-          (BeginGamePage str gameName, Cmd.none)
+        BeginGamePage playerId _ gameName ->
+          (BeginGamePage playerId str gameName, Cmd.none)
+
+        _ ->
+          (model, Cmd.none)
+
+    UpdatePlayerId str ->
+      case model of
+        BeginGamePage _ playerName gameName ->
+          (BeginGamePage str playerName gameName, Cmd.none)
 
         _ ->
           (model, Cmd.none)
 
     SendGameName ->
       case model of
-        BeginGamePage playerName gameName ->
+        BeginGamePage playerId playerName gameName ->
           ( WaitingForPlayers [playerName] gameName
-          , IntroData playerName gameName
+          , IntroData playerId playerName gameName
             |> sendMessage
           )
 

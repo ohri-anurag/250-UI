@@ -217,9 +217,9 @@ playerIndexDecoder =
 playerNameSetDecoder : Decoder PlayerNameSet
 playerNameSetDecoder =
   map6 PlayerNameSet
-    (field "name1" string)
-    (field "name2" string)
-    (field "name3" string)
-    (field "name4" string)
-    (field "name5" string)
-    (field "name6" string)
+    (field "Player1" string)
+    (field "Player2" string)
+    (field "Player3" string)
+    (field "Player4" string)
+    (field "Player5" string)
+    (field "Player6" string)

@@ -20,8 +20,8 @@ sendMessage sentData =
 sentDataEncoder : SentMessage -> E.Value
 sentDataEncoder sentData =
   case sentData of
-    IntroData playerName gameName ->
-      introDataEncoder playerName gameName
+    IntroData playerId playerName gameName ->
+      introDataEncoder playerId playerName gameName
 
     IncreaseBid gameName bidder bid ->
       increaseBidEncoder gameName bidder bid
@@ -36,11 +36,12 @@ sentDataEncoder sentData =
       playedCardEncoder gameName card
 
 
-introDataEncoder : String -> String -> E.Value
-introDataEncoder playerName gameName = E.object
+introDataEncoder : String -> String -> String -> E.Value
+introDataEncoder playerId playerName gameName = E.object
   [ ("gameName", E.string gameName)
   , ("value", E.object
       [ ("tag", E.string "IntroData")
+      , ("playerId", E.string playerId)
       , ("playerName", E.string playerName)
       ]
     )
