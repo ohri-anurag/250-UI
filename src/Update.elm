@@ -53,10 +53,9 @@ update msg model =
 
     QuitBidding ->
       case model of
-        BiddingRound commonData biddingRoundData ->
-          ( { biddingRoundData
-            | amIBidding = False
-            } |> BiddingRound commonData
+        BiddingRound commonData bidders ->
+          ( List.filter ((/=) commonData.myData.myIndex) bidders
+            |> BiddingRound commonData
           , SendQuit commonData.gameName commonData.myData.myIndex
             |> sendMessage
           )
@@ -187,12 +186,8 @@ handleReceivedMessages receivedMessage model =
                 , myCards = myCards
                 }
               }
-            biddingRoundData =
-              { bidders = allPlayerIndices
-              , amIBidding = True
-              }
           in
-          ( BiddingRound commonData biddingRoundData
+          ( BiddingRound commonData allPlayerIndices
           , Cmd.none
           )
 
@@ -201,7 +196,7 @@ handleReceivedMessages receivedMessage model =
 
     MaximumBid bidder bid ->
       case model of
-        BiddingRound commonData biddingRoundData ->
+        BiddingRound commonData bidders ->
           let
             updateBiddingData biddingData =
               { biddingData
@@ -213,7 +208,7 @@ handleReceivedMessages receivedMessage model =
               { commonData
               | biddingData = updateBiddingData commonData.biddingData
               }
-              biddingRoundData
+              bidders
           , Cmd.none
           )
         
@@ -222,9 +217,9 @@ handleReceivedMessages receivedMessage model =
 
     HasQuitBidding quitter ->
       case model of
-        BiddingRound commonData biddingRoundData ->
+        BiddingRound commonData bidders ->
           let
-            newBidders = List.filter ((/=) quitter) biddingRoundData.bidders
+            newBidders = List.filter ((/=) quitter) bidders
           in
             -- Is bidding over?
           if List.length newBidders == 0
@@ -239,14 +234,11 @@ handleReceivedMessages receivedMessage model =
                   , Cmd.none
                   )
                 else
-                  ( WaitingForTrump commonData biddingRoundData
+                  ( WaitingForTrump commonData
                   , Cmd.none
                   )
             else
-              ( { biddingRoundData
-                | bidders = newBidders
-                }
-                |> BiddingRound commonData
+              ( BiddingRound commonData newBidders
               , Cmd.none
               )
         
@@ -281,7 +273,7 @@ handleReceivedMessages receivedMessage model =
           , Cmd.none
           )
 
-        WaitingForTrump commonData biddingRoundData ->
+        WaitingForTrump commonData ->
           let
             (playersStatus, helpersRevealed) =
               getPlayersStatus
@@ -483,9 +475,7 @@ handleReceivedMessages receivedMessage model =
                 , myCards = cards
                 }
               }
-              { bidders = allPlayerIndices
-              , amIBidding = True
-              }
+              allPlayerIndices
           , Cmd.none
           )
 
@@ -496,15 +486,12 @@ handleReceivedMessages receivedMessage model =
 sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
 sendIncreasedBidMessage model delta =
   case model of
-    BiddingRound commonData biddingRoundData ->
+    BiddingRound commonData bidders ->
       let
         newBid = commonData.biddingData.highestBid + delta
       in
       ( if newBid >= 250
-          then BiddingRound commonData
-            { biddingRoundData
-            | amIBidding = False
-            }
+          then BiddingRound commonData []
           else model
       , min newBid 250
         |> IncreaseBid commonData.gameName commonData.myData.myIndex

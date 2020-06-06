@@ -20,7 +20,7 @@ view model =
     WaitingForPlayers playerNames gameName ->
       waitingForPlayersView playerNames gameName
 
-    BiddingRound commonData biddingRoundData ->
+    BiddingRound commonData bidders ->
       let
         me = getPlayer commonData.playerSet commonData.myData.myIndex
       in
@@ -29,7 +29,7 @@ view model =
         [ div
             [attribute "class" "biddingRoundSidebar"]
             [ gameNameView commonData.gameName
-            , biddingZoneView commonData biddingRoundData
+            , biddingZoneView commonData bidders
             ]
         , div
             [attribute "class" "biddingRoundContent"]
@@ -43,7 +43,7 @@ view model =
     TrumpSelection commonData selectionData ->
       trumpSelectionView commonData selectionData
 
-    WaitingForTrump commonData biddingRoundData ->
+    WaitingForTrump commonData ->
       div
         [attribute "class" "waitingForTrumpView"]
         [ "Waiting for "
@@ -208,8 +208,8 @@ otherPlayersView myIndex playerSet allStatuses =
         [ attribute "class" "playersContainer" ]
 
 
-biddingZoneView : CommonData -> BiddingRoundData -> Html Msg
-biddingZoneView commonData biddingRoundData =
+biddingZoneView : CommonData -> List PlayerIndex -> Html Msg
+biddingZoneView commonData bidders =
   let
     highestBidderName =
       if commonData.biddingData.highestBidder == commonData.myData.myIndex
@@ -217,7 +217,7 @@ biddingZoneView commonData biddingRoundData =
         else
           getPlayer commonData.playerSet commonData.biddingData.highestBidder
           |> .name
-    bidderNames = List.map (getPlayer commonData.playerSet >> .name) biddingRoundData.bidders
+    bidderNames = List.map (getPlayer commonData.playerSet >> .name) bidders
     buttons =
       button
         [ attribute "class" "bidButton"
@@ -236,7 +236,7 @@ biddingZoneView commonData biddingRoundData =
             [text "+10"]
         ]
     biddingHtml =
-      if biddingRoundData.amIBidding
+      if List.member commonData.myData.myIndex bidders
         then
           [ div
               [attribute "class" "bidButtonContainer"]
@@ -255,7 +255,7 @@ biddingZoneView commonData biddingRoundData =
               [attribute "class" "bidButtonContainer"]
               [text "You can't bid anymore."]
           ]
-    bidders =
+    bidderDivs =
       let bidder name = span [] [text name]
       in
       List.map bidder bidderNames
@@ -275,7 +275,7 @@ biddingZoneView commonData biddingRoundData =
   [ span []
       [text "Current Bidders"]
     ::
-    bidders
+    bidderDivs
     |> span
         [attribute "class" "bidders"]
   ]

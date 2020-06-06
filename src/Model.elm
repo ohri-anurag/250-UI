@@ -88,12 +88,6 @@ type alias CommonData =
   }
 
 
-type alias BiddingRoundData =
-  { bidders : (List PlayerIndex)    -- List of current bidders
-  , amIBidding : Bool               -- Quite clear
-  }
-
-
 type TurnStatus
   = FirstAndNotMyTurn PlayerIndex
   | NotFirstAndNotMyTurn PlayerIndex Card
@@ -119,9 +113,9 @@ type alias PlayRoundData =
 type Model
   = BeginGamePage String String String
   | WaitingForPlayers (List String) String
-  | BiddingRound CommonData BiddingRoundData
+  | BiddingRound CommonData (List PlayerIndex)
   | TrumpSelection CommonData SelectionData
-  | WaitingForTrump CommonData BiddingRoundData
+  | WaitingForTrump CommonData
   | PlayRound CommonData PlayRoundData
 
 
