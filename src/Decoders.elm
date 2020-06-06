@@ -39,6 +39,7 @@ receivedDataDecoder =
       { name = name
       , gameScore = 0
       , totalScore = 0
+      , card = Nothing
       }
     playerNameSetToPlayerSet playerNameSet = succeed
       { player1 = playerWithName playerNameSet.name1
@@ -108,6 +109,12 @@ receivedDataDecoder =
           (field "biddingData" biddingDataDecoder)
           (field "myData" myDataDecoder)
           (field "bidders" playerIndicesDecoder)
+
+      -- "RoundReconnectionData" ->
+      --   map4 RoundReconnectionData
+      --     (field "playerSet" playerSetDecoder)
+      --     (field "biddingData" biddingDataDecoder)
+      --     (field "myData" myDataDecoder)
 
       _ ->
         "Unknown tag received: " ++ tag |> fail
@@ -239,10 +246,11 @@ playerNameSetDecoder =
 
 playerDecoder : Decoder Player
 playerDecoder =
-  map3 Player
+  map4 Player
     (field "totalScore" int)
     (field "gameScore" int)
     (field "name" string)
+    (field "card" (nullable cardDecoder))
 
 
 playerSetDecoder : Decoder PlayerSet

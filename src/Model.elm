@@ -33,6 +33,7 @@ type alias Player =
   { totalScore : Int
   , gameScore : Int
   , name : String
+  , card : Maybe Card
   }
 
 
@@ -55,16 +56,6 @@ type Round
  | Round6
  | Round7
  | Round8
-
-
-type alias Hand =
-  { card1 : Maybe Card
-  , card2 : Maybe Card
-  , card3 : Maybe Card
-  , card4 : Maybe Card
-  , card5 : Maybe Card
-  , card6 : Maybe Card
-  }
 
 
 type alias MyData =
@@ -103,7 +94,6 @@ type alias PlayRoundData =
   { selectionData : SelectionData   -- Selected trump and helpers
   , firstPlayer : PlayerIndex       -- Who plays the first card in a round?
   , roundIndex : Round              -- Which round?
-  , hand : Hand                     -- Collection of cards played in the current round
   , playersStatus : PlayerStatusSet -- Which players are my allies/enemies?
   , helpersRevealed : Int           -- How many helpers have been revealed to me
   , turnStatus : TurnStatus         -- Refer to TurnStatus
@@ -284,73 +274,45 @@ newPlayer index =
   { totalScore = 0
   , gameScore = 0
   , name = showPlayerIndex index
+  , card = Nothing
   }
 
 
-emptyHand : Hand
-emptyHand =
-  { card1 = Nothing
-  , card2 = Nothing
-  , card3 = Nothing
-  , card4 = Nothing
-  , card5 = Nothing
-  , card6 = Nothing
-  }
+updateCard : Card -> Player -> Player
+updateCard card player = { player | card = Just card }
 
 
-getCardFromHand : PlayerIndex -> Hand -> Maybe Card
-getCardFromHand playerIndex hand =
+updateCardInSet : PlayerIndex -> Card -> PlayerSet -> PlayerSet
+updateCardInSet playerIndex card playerSet =
   case playerIndex of
     Player1 ->
-      hand.card1
-
-    Player2 ->
-      hand.card2
-
-    Player3 ->
-      hand.card3
-
-    Player4 ->
-      hand.card4
-
-    Player5 ->
-      hand.card5
-
-    Player6 ->
-      hand.card6
-
-
-setCardInHand : PlayerIndex -> Card -> Hand -> Hand
-setCardInHand playerIndex card hand =
-  case playerIndex of
-    Player1 ->
-      { hand
-      | card1 = Just card
+      { playerSet
+      | player1 = updateCard card playerSet.player1
       }
 
     Player2 ->
-      { hand
-      | card2 = Just card
+      { playerSet
+      | player2 = updateCard card playerSet.player2
       }
 
     Player3 ->
-      { hand
-      | card3 = Just card
+      { playerSet
+      | player3 = updateCard card playerSet.player3
       }
 
     Player4 ->
-      { hand
-      | card4 = Just card
+      { playerSet
+      | player4 = updateCard card playerSet.player4
       }
 
     Player5 ->
-      { hand
-      | card5 = Just card
+      { playerSet
+      | player5 = updateCard card playerSet.player5
       }
 
     Player6 ->
-      { hand
-      | card6 = Just card
+      { playerSet
+      | player6 = updateCard card playerSet.player6
       }
 
 

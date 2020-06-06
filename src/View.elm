@@ -57,6 +57,10 @@ view model =
       let
         myIndex = commonData.myData.myIndex
         me = getPlayer commonData.playerSet myIndex
+        playerCards =
+          getPlayers commonData.playerSet
+          |> List.map .card
+          |> List.map2 Tuple.pair allPlayerIndices
       in
       div
         [attribute "class" "playRoundView"]
@@ -69,7 +73,7 @@ view model =
             [attribute "class" "playRoundContent"]
             [ getPlayerStatuses playRoundData.playersStatus
               |> otherPlayersView myIndex commonData.playerSet
-            , playAreaView playRoundData.hand myIndex
+            , playAreaView playerCards myIndex
             , myCardsView playRoundData.turnStatus commonData.myData.myCards me
             ]
         ]
@@ -447,35 +451,34 @@ staticInfoView commonData selectionData turnStatus round =
     ]
 
 
-playAreaView : Hand -> PlayerIndex -> Html Msg
-playAreaView hand myIndex =
+playAreaView : List (PlayerIndex, Maybe Card) -> PlayerIndex -> Html Msg
+playAreaView cards myIndex =
   let
-    otherPlayers = rotateOtherPlayers allPlayerIndices
+    (otherPlayers, me) = rotateOtherPlayers cards
 
     rotateOtherPlayers allPlayers =
       case allPlayers of
         (x :: xs) ->
-          if x == myIndex
-            then xs
+          if Tuple.first x == myIndex
+            then (xs, x)
             else xs ++ [x] |> rotateOtherPlayers
 
         [] ->
-          []
+          ([], (myIndex, Nothing))
 
-    playerCardView i playerIndex =
+    playerCardView i (playerIndex, card) =
       let
         defaultView =
           div ["yetToPlay p" ++ String.fromInt i |> attribute "class"]
             [span [] [text "Yet to play"]]
       in
-      getCardFromHand playerIndex hand
-      |> Maybe.map (cardView ["playerCard p" ++ String.fromInt i |> attribute "class" ])
+      Maybe.map (cardView ["playerCard p" ++ String.fromInt i |> attribute "class" ]) card
       |> Maybe.withDefault defaultView
 
     playerCards =
       List.indexedMap playerCardView otherPlayers
 
-    myCard = playerCardView 5 myIndex
+    myCard = playerCardView 5 me
   in
   div
     [attribute "class" "playArea"]

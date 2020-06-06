@@ -262,7 +262,6 @@ handleReceivedMessages receivedMessage model =
             { selectionData = selectionData
             , firstPlayer = firstBidder
             , roundIndex = Round1
-            , hand = emptyHand
             , playersStatus = playersStatus
             , helpersRevealed = helpersRevealed
             , turnStatus =
@@ -288,7 +287,6 @@ handleReceivedMessages receivedMessage model =
             { selectionData = selectionData
             , firstPlayer = firstBidder
             , roundIndex = Round1
-            , hand = emptyHand
             , playersStatus = playersStatus
             , helpersRevealed = helpersRevealed
             , turnStatus =
@@ -379,18 +377,16 @@ handleReceivedMessages receivedMessage model =
                       (oldStatus, playRoundData.helpersRevealed)
 
             (newerStatus, newerHelpersRevealed) = updatePlayerStatus playRoundData.playersStatus
-
-            newHand = setCardInHand oldTurn card playRoundData.hand
           in
           ( PlayRound 
               { commonData
               | myData = updateMyData commonData.myData
+              , playerSet = updateCardInSet oldTurn card commonData.playerSet
               }
               { playRoundData
               | playersStatus = newerStatus
               , helpersRevealed = newerHelpersRevealed
               , turnStatus = newTurnStatus
-              , hand = newHand
               }
           , Cmd.none
           )
@@ -403,8 +399,11 @@ handleReceivedMessages receivedMessage model =
         PlayRound commonData playRoundData ->
           let
             updatePlayers = updatePlayer winner(\p -> 
-                  { p | gameScore = p.gameScore + score }
-                  ) commonData.playerSet
+                { p
+                | gameScore = p.gameScore + score
+                , card = Nothing
+                }
+              ) commonData.playerSet
             newRound = nextRound playRoundData.roundIndex
           in
           ( PlayRound
@@ -419,7 +418,6 @@ handleReceivedMessages receivedMessage model =
                       then FirstAndMyTurn
                       else FirstAndNotMyTurn winner
               , roundIndex = newRound
-              , hand = emptyHand
               , firstPlayer = winner
               }
           , Cmd.none
