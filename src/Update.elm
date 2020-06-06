@@ -482,6 +482,22 @@ handleReceivedMessages receivedMessage model =
         _ ->
           (model, Cmd.none)
 
+    BiddingReconnectionData playerSet biddingData myData bidders  ->
+      case model of
+        WaitingForPlayers _ gameName ->
+          (BiddingRound
+            { gameName = gameName
+            , playerSet = playerSet
+            , biddingData = biddingData
+            , myData = myData
+            }
+            bidders
+          , Cmd.none)
+
+        _ ->
+          (model, Cmd.none)
+
+
 
 sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
 sendIncreasedBidMessage model delta =

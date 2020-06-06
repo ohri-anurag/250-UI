@@ -102,6 +102,13 @@ receivedDataDecoder =
         field "cards" cardsDecoder
         |> map NewGame
 
+      "BiddingReconnectionData" ->
+        map4 BiddingReconnectionData
+          (field "playerSet" playerSetDecoder)
+          (field "biddingData" biddingDataDecoder)
+          (field "myData" myDataDecoder)
+          (field "bidders" playerIndicesDecoder)
+
       _ ->
         "Unknown tag received: " ++ tag |> fail
   )
@@ -211,8 +218,12 @@ playerIndexDecoder =
 
       _ ->
         "Unknown PlayerIndex: " ++ str |> fail
-
   )
+
+
+playerIndicesDecoder : Decoder (List PlayerIndex)
+playerIndicesDecoder =
+  list playerIndexDecoder
 
 
 playerNameSetDecoder : Decoder PlayerNameSet
@@ -224,3 +235,37 @@ playerNameSetDecoder =
     (field "Player4" string)
     (field "Player5" string)
     (field "Player6" string)
+
+
+playerDecoder : Decoder Player
+playerDecoder =
+  map3 Player
+    (field "totalScore" int)
+    (field "gameScore" int)
+    (field "name" string)
+
+
+playerSetDecoder : Decoder PlayerSet
+playerSetDecoder =
+  map6 PlayerSet
+    (field "Player1" playerDecoder)
+    (field "Player2" playerDecoder)
+    (field "Player3" playerDecoder)
+    (field "Player4" playerDecoder)
+    (field "Player5" playerDecoder)
+    (field "Player6" playerDecoder)
+
+
+biddingDataDecoder : Decoder BiddingData
+biddingDataDecoder =
+  map3 BiddingData
+    (field "highestBid" int)
+    (field "highestBidder" playerIndexDecoder)
+    (field "firstBidder" playerIndexDecoder)
+
+
+myDataDecoder : Decoder MyData
+myDataDecoder =
+  map2 MyData
+    (field "myIndex" playerIndexDecoder)
+    (field "myCards" cardsDecoder)

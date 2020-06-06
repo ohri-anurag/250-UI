@@ -173,6 +173,11 @@ type ReceivedMessage
       Int                 -- Winning Team score
   | NewGame
       (List Card)         -- Cards for a new game
+  | BiddingReconnectionData
+      PlayerSet
+      BiddingData
+      MyData
+      (List PlayerIndex)  -- Remaining Bidders
 
 
 type Msg
