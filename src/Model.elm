@@ -1,33 +1,7 @@
 module Model exposing(..)
 
 
-type Suit
-  = Club
-  | Heart
-  | Diamond
-  | Spade
-
-
-type CardValue
-  = Two
-  | Three
-  | Four
-  | Five
-  | Six
-  | Seven
-  | Eight
-  | Nine
-  | Ten
-  | Jack
-  | Queen
-  | King
-  | Ace
-
-
-type alias Card =
-  { value : CardValue
-  , suit : Suit
-  }
+import Model.Card exposing (..)
 
 
 type PlayerStatus
@@ -106,20 +80,17 @@ type alias BiddingData =
   }
 
 
-type alias BiddingRoundData =
-  { playerSet : PlayerSet           -- Player names and their scores
+type alias CommonData =
+  { gameName : String
+  , playerSet : PlayerSet           -- Player names and their scores
   , biddingData : BiddingData       -- Highest bid and bidder
-  , bidders : (List PlayerIndex)    -- List of current bidders
-  , amIBidding : Bool               -- Quite clear
   , myData : MyData                 -- My index and cards
   }
 
 
-type alias TrumpSelectionData =
-  { selectionData : SelectionData   -- Selected trump and helpers
-  , biddingData : BiddingData       -- Highest bid and bidder
-  , playerSet : PlayerSet           -- Player names and their scores
-  , myData : MyData                 -- My index and cards
+type alias BiddingRoundData =
+  { bidders : (List PlayerIndex)    -- List of current bidders
+  , amIBidding : Bool               -- Quite clear
   }
 
 
@@ -136,9 +107,6 @@ type TurnStatus
 
 type alias PlayRoundData =
   { selectionData : SelectionData   -- Selected trump and helpers
-  , biddingData : BiddingData       -- Highest bid and bidder
-  , playerSet : PlayerSet           -- Player names and their scores
-  , myData : MyData                 -- My index and cards
   , firstPlayer : PlayerIndex       -- Who plays the first card in a round?
   , roundIndex : Round              -- Which round?
   , hand : Hand                     -- Collection of cards played in the current round
@@ -151,10 +119,10 @@ type alias PlayRoundData =
 type Model
   = BeginGamePage String String String
   | WaitingForPlayers (List String) String
-  | BiddingRound String BiddingRoundData
-  | TrumpSelection String TrumpSelectionData
-  | WaitingForTrump String BiddingRoundData
-  | PlayRound String PlayRoundData
+  | BiddingRound CommonData BiddingRoundData
+  | TrumpSelection CommonData SelectionData
+  | WaitingForTrump CommonData BiddingRoundData
+  | PlayRound CommonData PlayRoundData
 
 
 
@@ -230,84 +198,8 @@ type Msg
   | ReceivedMessageType ReceivedMessage
 
 
-allSuits : List Suit
-allSuits = [Club, Heart, Diamond, Spade]
-
-
-allCardValues : List CardValue
-allCardValues = [Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace]
-
-
-allCards : List Card
-allCards = List.concatMap (\cardValue -> List.map (Card cardValue) allSuits) allCardValues
-
-
 allPlayerIndices : List PlayerIndex
 allPlayerIndices = [Player1, Player2, Player3, Player4, Player5, Player6]
-
-
-showSuit : Bool -> Suit -> String
-showSuit isPlural suit =
-  let
-    suitStr =
-      case suit of
-        Club ->
-          "Club"
-
-        Heart ->
-          "Heart"
-
-        Diamond ->
-          "Diamond"
-
-        Spade ->
-          "Spade"
-
-  in
-  suitStr ++ if isPlural then "s" else ""
-
-
-showCardValue : CardValue -> String
-showCardValue cardValue =
-  case cardValue of
-    Ace ->
-      "Ace"
-
-    Two ->
-      "Two"
-
-    Three ->
-      "Three"
-
-    Four ->
-      "Four"
-
-    Five ->
-      "Five"
-
-    Six ->
-      "Six"
-
-    Seven ->
-      "Seven"
-
-    Eight ->
-      "Eight"
-
-    Nine ->
-      "Nine"
-
-    Ten ->
-      "Ten"
-
-    Jack ->
-      "Jack"
-
-    Queen ->
-      "Queen"
-
-    King ->
-      "King"
 
 
 showRound : Bool -> Round -> String
@@ -386,19 +278,6 @@ nextRound round =
 
     Round8 ->
       Round1
-
-
-initCards : List Card
-initCards =
-  [ Card Ace Spade
-  , Card Ace Heart
-  , Card Ace Diamond
-  , Card Ace Club
-  , Card Three Spade
-  , Card Three Heart
-  , Card Three Diamond
-  , Card Three Club
-  ]
 
 
 newPlayer : PlayerIndex -> Player

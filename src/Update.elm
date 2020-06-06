@@ -1,6 +1,7 @@
 module Update exposing (..)
 
 
+import Model.Card exposing (..)
 import Model exposing (..)
 import Encoders exposing (sendMessage)
 import Json.Encode exposing (Value, encode)
@@ -52,11 +53,11 @@ update msg model =
 
     QuitBidding ->
       case model of
-        BiddingRound gameName biddingRoundData ->
+        BiddingRound commonData biddingRoundData ->
           ( { biddingRoundData
             | amIBidding = False
-            } |> BiddingRound gameName
-          , SendQuit gameName biddingRoundData.myData.myIndex
+            } |> BiddingRound commonData
+          , SendQuit commonData.gameName commonData.myData.myIndex
             |> sendMessage
           )
 
@@ -64,15 +65,12 @@ update msg model =
           (model, Cmd.none)
 
     SelectTrump suit ->
-      let
-        updateTrump selectionData = { selectionData | trump = suit }
-      in
       case model of
-        TrumpSelection gameName trumpSelectionData ->
-          ( TrumpSelection gameName
-            { trumpSelectionData
-            | selectionData = updateTrump trumpSelectionData.selectionData
-            }
+        TrumpSelection commonData selectionData ->
+          ( TrumpSelection commonData
+              { selectionData
+              | trump = suit
+              }
           , Cmd.none
           )
 
@@ -81,9 +79,9 @@ update msg model =
 
     SelectHelper card ->
       case model of
-        TrumpSelection gameName trumpSelectionData ->
+        TrumpSelection commonData selectionData ->
           let
-            updateHelpers selectionData =
+            newSelectionData =
               -- Was card already a helper?
               if List.member card selectionData.helpers
                 then
@@ -99,10 +97,7 @@ update msg model =
                   -- Already have 2 helpers, can't have more
                   else selectionData
           in
-          ( TrumpSelection gameName
-            { trumpSelectionData
-            | selectionData = updateHelpers trumpSelectionData.selectionData
-            }
+          ( TrumpSelection commonData newSelectionData
           , Cmd.none
           )
 
@@ -111,9 +106,9 @@ update msg model =
 
     SendTrump ->
       case model of
-        TrumpSelection gameName trumpSelectionData ->
+        TrumpSelection commonData selectionData ->
           ( model
-          , SentSelectionData gameName trumpSelectionData.selectionData
+          , SentSelectionData commonData.gameName selectionData
             |> sendMessage
           )
 
@@ -132,10 +127,10 @@ update msg model =
               turnStatus
       in
       case model of
-        PlayRound gameName playRoundData ->
-          ( PlayRound gameName
+        PlayRound commonData playRoundData ->
+          ( PlayRound commonData
             { playRoundData | turnStatus = updateTurn playRoundData.turnStatus }
-          , PlayedCard gameName card
+          , PlayedCard commonData.gameName card
             |> sendMessage
           )
 
@@ -179,29 +174,34 @@ handleReceivedMessages receivedMessage model =
       case model of
         WaitingForPlayers players gameName ->
           let
-            biddingRoundData =
-              { playerSet = playerSet
+            commonData =
+              { gameName = gameName
+              , playerSet = playerSet
               , biddingData =
                 { highestBid = 150
                 , highestBidder = firstBidder
                 , firstBidder = firstBidder
                 }
-              , bidders = allPlayerIndices
-              , amIBidding = True
               , myData =
                 { myIndex = myIndex
                 , myCards = myCards
                 }
               }
+            biddingRoundData =
+              { bidders = allPlayerIndices
+              , amIBidding = True
+              }
           in
-          (BiddingRound gameName biddingRoundData, Cmd.none)
+          ( BiddingRound commonData biddingRoundData
+          , Cmd.none
+          )
 
         _ ->
           (model, Cmd.none)
 
     MaximumBid bidder bid ->
       case model of
-        BiddingRound gameName biddingRoundData ->
+        BiddingRound commonData biddingRoundData ->
           let
             updateBiddingData biddingData =
               { biddingData
@@ -209,10 +209,11 @@ handleReceivedMessages receivedMessage model =
               , highestBidder = bidder
               }
           in
-          ( { biddingRoundData
-            | biddingData = updateBiddingData biddingRoundData.biddingData
-            }
-            |> BiddingRound gameName
+          ( BiddingRound 
+              { commonData
+              | biddingData = updateBiddingData commonData.biddingData
+              }
+              biddingRoundData
           , Cmd.none
           )
         
@@ -221,7 +222,7 @@ handleReceivedMessages receivedMessage model =
 
     HasQuitBidding quitter ->
       case model of
-        BiddingRound gameName biddingRoundData ->
+        BiddingRound commonData biddingRoundData ->
           let
             newBidders = List.filter ((/=) quitter) biddingRoundData.bidders
           in
@@ -229,28 +230,23 @@ handleReceivedMessages receivedMessage model =
           if List.length newBidders == 0
             -- Did I win bidding?
             then
-              if biddingRoundData.myData.myIndex == biddingRoundData.biddingData.highestBidder
+              if commonData.myData.myIndex == commonData.biddingData.highestBidder
                 then
-                  ( TrumpSelection gameName
-                    { selectionData =
+                  ( TrumpSelection commonData
                       { trump = Spade
                       , helpers = []
                       }
-                    , biddingData = biddingRoundData.biddingData
-                    , playerSet = biddingRoundData.playerSet
-                    , myData = biddingRoundData.myData
-                    }
                   , Cmd.none
                   )
                 else
-                  ( WaitingForTrump gameName biddingRoundData
+                  ( WaitingForTrump commonData biddingRoundData
                   , Cmd.none
                   )
             else
               ( { biddingRoundData
                 | bidders = newBidders
                 }
-                |> BiddingRound gameName
+                |> BiddingRound commonData
               , Cmd.none
               )
         
@@ -259,58 +255,52 @@ handleReceivedMessages receivedMessage model =
 
     ReceivedSelectionData selectionData ->
       case model of
-        TrumpSelection gameName trumpSelectionData ->
+        TrumpSelection commonData _ ->
           let
             (playersStatus, helpersRevealed) =
               getPlayersStatus
-                trumpSelectionData.myData.myIndex
-                trumpSelectionData.myData.myIndex
-                trumpSelectionData.selectionData
-                trumpSelectionData.myData.myCards
+                commonData.myData.myIndex
+                commonData.myData.myIndex
+                selectionData
+                commonData.myData.myCards
                 initPlayerStatusSet
-            firstBidder = trumpSelectionData.biddingData.firstBidder
+            firstBidder = commonData.biddingData.firstBidder
           in
-          ( PlayRound gameName
-            { selectionData = trumpSelectionData.selectionData
-            , biddingData = trumpSelectionData.biddingData
-            , playerSet = trumpSelectionData.playerSet
-            , myData = trumpSelectionData.myData
+          ( PlayRound commonData
+            { selectionData = selectionData
             , firstPlayer = firstBidder
             , roundIndex = Round1
             , hand = emptyHand
             , playersStatus = playersStatus
             , helpersRevealed = helpersRevealed
             , turnStatus =
-                if firstBidder == trumpSelectionData.myData.myIndex
+                if firstBidder == commonData.myData.myIndex
                   then FirstAndMyTurn
                   else FirstAndNotMyTurn firstBidder
             }
           , Cmd.none
           )
 
-        WaitingForTrump gameName biddingRoundData ->
+        WaitingForTrump commonData biddingRoundData ->
           let
             (playersStatus, helpersRevealed) =
               getPlayersStatus
-                biddingRoundData.myData.myIndex
-                biddingRoundData.biddingData.highestBidder
+                commonData.myData.myIndex
+                commonData.biddingData.highestBidder
                 selectionData
-                biddingRoundData.myData.myCards
+                commonData.myData.myCards
                 initPlayerStatusSet
-            firstBidder = biddingRoundData.biddingData.firstBidder
+            firstBidder = commonData.biddingData.firstBidder
           in
-          ( PlayRound gameName
+          ( PlayRound commonData
             { selectionData = selectionData
-            , biddingData = biddingRoundData.biddingData
-            , playerSet = biddingRoundData.playerSet
-            , myData = biddingRoundData.myData
             , firstPlayer = firstBidder
             , roundIndex = Round1
             , hand = emptyHand
             , playersStatus = playersStatus
             , helpersRevealed = helpersRevealed
             , turnStatus =
-                if firstBidder == biddingRoundData.myData.myIndex
+                if firstBidder == commonData.myData.myIndex
                   then FirstAndMyTurn
                   else FirstAndNotMyTurn firstBidder
             }
@@ -322,7 +312,7 @@ handleReceivedMessages receivedMessage model =
 
     PlayCard card ->
       case model of
-        PlayRound gameName playRoundData ->
+        PlayRound commonData playRoundData ->
           let
             updateMyData myData =
               { myData
@@ -332,7 +322,7 @@ handleReceivedMessages receivedMessage model =
             hadTeamBeenRevealed =
               playRoundData.helpersRevealed == maxHelpers playRoundData.selectionData
 
-            myIndex = playRoundData.myData.myIndex
+            myIndex = commonData.myData.myIndex
 
             (newTurnStatus, oldTurn) =
               case playRoundData.turnStatus of
@@ -368,7 +358,7 @@ handleReceivedMessages receivedMessage model =
                 _ -> (playRoundData.turnStatus, Player1)
 
             updatePlayerStatus oldStatus =
-              if oldTurn == playRoundData.myData.myIndex || hadTeamBeenRevealed
+              if oldTurn == commonData.myData.myIndex || hadTeamBeenRevealed
                 -- It was my own turn, or the team had already been revealed
                 then (oldStatus, playRoundData.helpersRevealed)
                 else
@@ -400,14 +390,16 @@ handleReceivedMessages receivedMessage model =
 
             newHand = setCardInHand oldTurn card playRoundData.hand
           in
-          ( PlayRound gameName
-            { playRoundData
-            | myData = updateMyData playRoundData.myData
-            , playersStatus = newerStatus
-            , helpersRevealed = newerHelpersRevealed
-            , turnStatus = newTurnStatus
-            , hand = newHand
-            }
+          ( PlayRound 
+              { commonData
+              | myData = updateMyData commonData.myData
+              }
+              { playRoundData
+              | playersStatus = newerStatus
+              , helpersRevealed = newerHelpersRevealed
+              , turnStatus = newTurnStatus
+              , hand = newHand
+              }
           , Cmd.none
           )
 
@@ -416,26 +408,28 @@ handleReceivedMessages receivedMessage model =
 
     RoundData winner score ->
       case model of
-        PlayRound gameName playRoundData ->
+        PlayRound commonData playRoundData ->
           let
             updatePlayers = updatePlayer winner(\p -> 
                   { p | gameScore = p.gameScore + score }
-                  ) playRoundData.playerSet
+                  ) commonData.playerSet
             newRound = nextRound playRoundData.roundIndex
           in
-          ( PlayRound gameName
-            { playRoundData
-            | playerSet = updatePlayers
-            , turnStatus =
-                if newRound == Round1
-                  then GameFinished
-                  else if winner == playRoundData.myData.myIndex
-                    then FirstAndMyTurn
-                    else FirstAndNotMyTurn winner
-            , roundIndex = newRound
-            , hand = emptyHand
-            , firstPlayer = winner
-            }
+          ( PlayRound
+              { commonData
+              | playerSet = updatePlayers
+              }
+              { playRoundData
+              | turnStatus =
+                  if newRound == Round1
+                    then GameFinished
+                    else if winner == commonData.myData.myIndex
+                      then FirstAndMyTurn
+                      else FirstAndNotMyTurn winner
+              , roundIndex = newRound
+              , hand = emptyHand
+              , firstPlayer = winner
+              }
           , Cmd.none
           )
 
@@ -444,7 +438,7 @@ handleReceivedMessages receivedMessage model =
 
     GameFinishedData winningTeam totalScore ->
       case model of
-        PlayRound gameName playRoundData ->
+        PlayRound commonData playRoundData ->
           let
             updatedPlayerScores =
               List.foldl (\playerIndex playerSet ->
@@ -458,12 +452,13 @@ handleReceivedMessages receivedMessage model =
                         else 0
                   }
                 ) playerSet
-              ) playRoundData.playerSet allPlayerIndices
+              ) commonData.playerSet allPlayerIndices
           in
-          ( PlayRound gameName
-            { playRoundData
-            | playerSet = updatedPlayerScores
-            }
+          ( PlayRound 
+              { commonData
+              | playerSet = updatedPlayerScores
+              }
+              playRoundData
           , Cmd.none
           )
 
@@ -472,24 +467,25 @@ handleReceivedMessages receivedMessage model =
 
     NewGame cards ->
       case model of
-        PlayRound gameName playRoundData ->
+        PlayRound commonData playRoundData ->
           let
-            nextFirstBidder = nextTurn playRoundData.biddingData.firstBidder
+            nextFirstBidder = nextTurn commonData.biddingData.firstBidder
           in
-          ( BiddingRound gameName
-            { playerSet = playRoundData.playerSet
-            , biddingData =
-              { highestBid = 150
-              , highestBidder = nextFirstBidder
-              , firstBidder = nextFirstBidder
+          ( BiddingRound
+              { commonData
+              | biddingData =
+                  { highestBid = 150
+                  , highestBidder = nextFirstBidder
+                  , firstBidder = nextFirstBidder
+                  }
+              , myData =
+                { myIndex = commonData.myData.myIndex
+                , myCards = cards
+                }
               }
-            , bidders = allPlayerIndices
-            , myData =
-              { myIndex = playRoundData.myData.myIndex
-              , myCards = cards
+              { bidders = allPlayerIndices
+              , amIBidding = True
               }
-            , amIBidding = True
-            }
           , Cmd.none
           )
 
@@ -500,18 +496,18 @@ handleReceivedMessages receivedMessage model =
 sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
 sendIncreasedBidMessage model delta =
   case model of
-    BiddingRound gameName biddingRoundData ->
+    BiddingRound commonData biddingRoundData ->
       let
-        newBid = biddingRoundData.biddingData.highestBid + delta
+        newBid = commonData.biddingData.highestBid + delta
       in
       ( if newBid >= 250
-          then BiddingRound gameName
+          then BiddingRound commonData
             { biddingRoundData
             | amIBidding = False
             }
           else model
       , min newBid 250
-        |> IncreaseBid gameName biddingRoundData.myData.myIndex
+        |> IncreaseBid commonData.gameName commonData.myData.myIndex
         |> sendMessage
       )
 

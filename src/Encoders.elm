@@ -4,6 +4,7 @@ port module Encoders exposing (..)
 import Json.Encode as E
 
 
+import Model.Card exposing (..)
 import Model exposing (..)
 
 

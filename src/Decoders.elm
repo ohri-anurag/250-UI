@@ -4,6 +4,7 @@ port module Decoders exposing(..)
 import Json.Decode exposing (..)
 
 
+import Model.Card exposing (..)
 import Model exposing (..)
 
 
