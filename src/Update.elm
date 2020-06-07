@@ -249,51 +249,53 @@ handleReceivedMessages receivedMessage model =
       case model of
         TrumpSelection commonData _ ->
           let
-            (playersStatus, helpersRevealed) =
+            (playerSet, helpersRevealed) =
               getPlayersStatus
-                commonData.myData.myIndex
+                commonData.myData
                 commonData.myData.myIndex
                 selectionData
-                commonData.myData.myCards
-                initPlayerStatusSet
+                commonData.playerSet
             firstBidder = commonData.biddingData.firstBidder
           in
-          ( PlayRound commonData
-            { selectionData = selectionData
-            , firstPlayer = firstBidder
-            , roundIndex = Round1
-            , playersStatus = playersStatus
-            , helpersRevealed = helpersRevealed
-            , turnStatus =
-                if firstBidder == commonData.myData.myIndex
-                  then FirstAndMyTurn
-                  else FirstAndNotMyTurn firstBidder
-            }
+          ( PlayRound
+              { commonData
+              | playerSet = playerSet
+              }
+              { selectionData = selectionData
+              , firstPlayer = firstBidder
+              , roundIndex = Round1
+              , helpersRevealed = helpersRevealed
+              , turnStatus =
+                  if firstBidder == commonData.myData.myIndex
+                    then FirstAndMyTurn
+                    else FirstAndNotMyTurn firstBidder
+              }
           , Cmd.none
           )
 
         WaitingForTrump commonData ->
           let
-            (playersStatus, helpersRevealed) =
+            (playerSet, helpersRevealed) =
               getPlayersStatus
-                commonData.myData.myIndex
+                commonData.myData
                 commonData.biddingData.highestBidder
                 selectionData
-                commonData.myData.myCards
-                initPlayerStatusSet
+                commonData.playerSet
             firstBidder = commonData.biddingData.firstBidder
           in
-          ( PlayRound commonData
-            { selectionData = selectionData
-            , firstPlayer = firstBidder
-            , roundIndex = Round1
-            , playersStatus = playersStatus
-            , helpersRevealed = helpersRevealed
-            , turnStatus =
-                if firstBidder == commonData.myData.myIndex
-                  then FirstAndMyTurn
-                  else FirstAndNotMyTurn firstBidder
-            }
+          ( PlayRound
+              { commonData
+              | playerSet = playerSet
+              }
+              { selectionData = selectionData
+              , firstPlayer = firstBidder
+              , roundIndex = Round1
+              , helpersRevealed = helpersRevealed
+              , turnStatus =
+                  if firstBidder == commonData.myData.myIndex
+                    then FirstAndMyTurn
+                    else FirstAndNotMyTurn firstBidder
+              }
           , Cmd.none
           )
 
@@ -308,9 +310,6 @@ handleReceivedMessages receivedMessage model =
               { myData
               | myCards = List.filter ((==) card >> not) myData.myCards
               }
-
-            hadTeamBeenRevealed =
-              playRoundData.helpersRevealed == maxHelpers playRoundData.selectionData
 
             myIndex = commonData.myData.myIndex
 
@@ -347,10 +346,13 @@ handleReceivedMessages receivedMessage model =
                 -- Unreachable case
                 _ -> (playRoundData.turnStatus, Player1)
 
-            updatePlayerStatus oldStatus =
+            hadTeamBeenRevealed =
+              playRoundData.helpersRevealed == maxHelpers playRoundData.selectionData
+
+            updatePlayerSet oldSet =
               if oldTurn == commonData.myData.myIndex || hadTeamBeenRevealed
                 -- It was my own turn, or the team had already been revealed
-                then (oldStatus, playRoundData.helpersRevealed)
+                then (oldSet, playRoundData.helpersRevealed)
                 else
                   -- Is the card a helper card?
                   -- If so, set its status to bidding team
@@ -359,33 +361,32 @@ handleReceivedMessages receivedMessage model =
                   if isPlayerHelper card playRoundData.selectionData
                     then
                       let
-                        newStatus = setPlayerStatus oldTurn BiddingTeam oldStatus
+                        newSet = updatePlayerStatus oldTurn BiddingTeam oldSet
                         newHelpersRevealed = playRoundData.helpersRevealed + 1
                         hasTeamBeenRevealed = newHelpersRevealed == maxHelpers playRoundData.selectionData
                       in
                       -- If team was just revealed, mark the anti team
                       if hasTeamBeenRevealed
                         then
-                          getPlayerStatuses newStatus
+                          getPlayers .status newSet
                           |> List.filter (Tuple.second >> (/=) BiddingTeam)
                           |> List.map Tuple.first
-                          |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatus
+                          |> List.foldl (\p pss -> updatePlayerStatus p AntiTeam pss) newSet
                           |> \s -> Tuple.pair s newHelpersRevealed
                         else
-                          (newStatus, newHelpersRevealed)
+                          (newSet, newHelpersRevealed)
                     else
-                      (oldStatus, playRoundData.helpersRevealed)
+                      (oldSet, playRoundData.helpersRevealed)
 
-            (newerStatus, newerHelpersRevealed) = updatePlayerStatus playRoundData.playersStatus
+            (newerSet, newerHelpersRevealed) = updatePlayerSet commonData.playerSet
           in
           ( PlayRound 
               { commonData
               | myData = updateMyData commonData.myData
-              , playerSet = updateCardInSet oldTurn card commonData.playerSet
+              , playerSet = updateCardInSet oldTurn card newerSet
               }
               { playRoundData
-              | playersStatus = newerStatus
-              , helpersRevealed = newerHelpersRevealed
+              | helpersRevealed = newerHelpersRevealed
               , turnStatus = newTurnStatus
               }
           , Cmd.none
@@ -483,18 +484,96 @@ handleReceivedMessages receivedMessage model =
     BiddingReconnectionData playerSet biddingData myData bidders  ->
       case model of
         WaitingForPlayers _ gameName ->
-          (BiddingRound
+          -- We are in trump selection state
+          if List.length bidders == 0
+            -- I am the bidder
+            then if biddingData.highestBidder == myData.myIndex
+              then
+                ( TrumpSelection
+                    { gameName = gameName
+                    , playerSet = playerSet
+                    , biddingData = biddingData
+                    , myData = myData
+                    }
+                    { trump = Spade
+                    , helpers = []
+                    }
+                , Cmd.none)
+              else
+                ( WaitingForTrump
+                    { gameName = gameName
+                    , playerSet = playerSet
+                    , biddingData = biddingData
+                    , myData = myData
+                    }
+                , Cmd.none
+                )
+            else
+              ( BiddingRound
+                  { gameName = gameName
+                  , playerSet = playerSet
+                  , biddingData = biddingData
+                  , myData = myData
+                  }
+                  bidders
+              , Cmd.none)
+
+        _ ->
+          (model, Cmd.none)
+
+    RoundReconnectionData playerSet biddingData myData selectionData firstPlayer turn round ->
+      case model of
+        WaitingForPlayers _ gameName ->
+          (PlayRound
             { gameName = gameName
             , playerSet = playerSet
             , biddingData = biddingData
             , myData = myData
             }
-            bidders
+            { selectionData = selectionData
+            , firstPlayer = firstPlayer
+            , roundIndex = round
+            , helpersRevealed = calculateHelpersRevealed playerSet selectionData
+            , turnStatus = calculateTurnStatus turn firstPlayer myData.myIndex playerSet
+            }
           , Cmd.none)
 
         _ ->
           (model, Cmd.none)
 
+    WebsocketFailed ->
+      (ErrorState, Cmd.none)
+
+
+calculateHelpersRevealed : PlayerSet -> SelectionData -> Int
+calculateHelpersRevealed playerSet selectionData =
+  let
+    players = getPlayers .status playerSet
+
+    hasTeamBeenRevealed = List.all (Tuple.second >> (/=) Undecided) players
+
+    biddingTeam = List.filter (Tuple.second >> (==) BiddingTeam) players
+  in
+  if hasTeamBeenRevealed
+    then List.length selectionData.helpers
+    else List.length biddingTeam - 1
+
+
+calculateTurnStatus : PlayerIndex -> PlayerIndex -> PlayerIndex -> PlayerSet -> TurnStatus
+calculateTurnStatus turn firstPlayer myIndex playerSet =
+  let
+    baseCard =
+      getPlayer playerSet firstPlayer
+      |> .card
+      |> Maybe.withDefault (Card Ace Spade)
+  in
+  if myIndex == firstPlayer
+    then if myIndex == turn
+      then FirstAndMyTurn
+      else FirstAndNotMyTurn turn
+    else if myIndex == turn
+      then NotFirstAndMyTurn baseCard
+      else NotFirstAndNotMyTurn turn baseCard
 
 
 sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
@@ -516,36 +595,36 @@ sendIncreasedBidMessage model delta =
       (model, Cmd.none)
 
 
-getPlayersStatus : PlayerIndex -> PlayerIndex -> SelectionData -> List Card -> PlayerStatusSet -> (PlayerStatusSet, Int)
-getPlayersStatus myIndex winnerIndex selectionData myCards playerStatusSet =
+getPlayersStatus : MyData -> PlayerIndex -> SelectionData -> PlayerSet -> (PlayerSet, Int)
+getPlayersStatus myData winnerIndex selectionData playerSet =
   let
     -- Set the bidder's status to bidding team
-    newStatusSet = setPlayerStatus winnerIndex BiddingTeam playerStatusSet
+    newPlayerSet = updatePlayerStatus winnerIndex BiddingTeam playerSet
 
     -- Apart from the bidder, all are anti team
     allAntiStatus =
       List.filter ((/=) winnerIndex) allPlayerIndices
-      |> List.foldl (\p pss -> setPlayerStatus p AntiTeam pss) newStatusSet
+      |> List.foldl (\p pss -> updatePlayerStatus p AntiTeam pss) newPlayerSet
   in
   -- The bidder did not ask for any helper, everyone knows the status
   if maxHelpers selectionData == 0
     then (allAntiStatus, 0)
-    else if myIndex == winnerIndex
+    else if myData.myIndex == winnerIndex
       then
         -- My status has already been set, since I am the bidder
-        (newStatusSet, 0)
+        (newPlayerSet, 0)
       else
         -- I am not the bidder
-        if amITheOnlyHelper myCards selectionData
+        if amITheOnlyHelper myData.myCards selectionData
           -- I am the only helper, set all other statuses to AntiTeam
           then
-            ( setPlayerStatus myIndex BiddingTeam allAntiStatus
+            ( updatePlayerStatus myData.myIndex BiddingTeam allAntiStatus
             , maxHelpers selectionData
             )
-          else if amIHelper myCards selectionData
+          else if amIHelper myData.myCards selectionData
             -- There is another helper
             then
-              (setPlayerStatus myIndex BiddingTeam newStatusSet, 1)
+              (updatePlayerStatus myData.myIndex BiddingTeam newPlayerSet, 1)
             else
               -- I am not a helper
-              (setPlayerStatus myIndex AntiTeam newStatusSet, 0)
+              (updatePlayerStatus myData.myIndex AntiTeam newPlayerSet, 0)

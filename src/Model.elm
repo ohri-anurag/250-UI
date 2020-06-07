@@ -10,16 +10,6 @@ type PlayerStatus
  | Undecided
 
 
-type alias PlayerStatusSet =
-  { status1 : PlayerStatus
-  , status2 : PlayerStatus
-  , status3 : PlayerStatus
-  , status4 : PlayerStatus
-  , status5 : PlayerStatus
-  , status6 : PlayerStatus
-  }
-
-
 type PlayerIndex
   = Player1
   | Player2
@@ -34,6 +24,7 @@ type alias Player =
   , gameScore : Int
   , name : String
   , card : Maybe Card
+  , status : PlayerStatus
   }
 
 
@@ -94,7 +85,6 @@ type alias PlayRoundData =
   { selectionData : SelectionData   -- Selected trump and helpers
   , firstPlayer : PlayerIndex       -- Who plays the first card in a round?
   , roundIndex : Round              -- Which round?
-  , playersStatus : PlayerStatusSet -- Which players are my allies/enemies?
   , helpersRevealed : Int           -- How many helpers have been revealed to me
   , turnStatus : TurnStatus         -- Refer to TurnStatus
   }
@@ -107,7 +97,7 @@ type Model
   | TrumpSelection CommonData SelectionData
   | WaitingForTrump CommonData
   | PlayRound CommonData PlayRoundData
-
+  | ErrorState
 
 
 type alias SelectionData =
@@ -168,6 +158,15 @@ type ReceivedMessage
       BiddingData
       MyData
       (List PlayerIndex)  -- Remaining Bidders
+  | RoundReconnectionData
+      PlayerSet
+      BiddingData
+      MyData
+      SelectionData
+      PlayerIndex         -- First player
+      PlayerIndex         -- Turn
+      Round               -- Which round
+  | WebsocketFailed
 
 
 type Msg
@@ -275,57 +274,8 @@ newPlayer index =
   , gameScore = 0
   , name = showPlayerIndex index
   , card = Nothing
+  , status = Undecided
   }
-
-
-updateCard : Card -> Player -> Player
-updateCard card player = { player | card = Just card }
-
-
-updateCardInSet : PlayerIndex -> Card -> PlayerSet -> PlayerSet
-updateCardInSet playerIndex card playerSet =
-  case playerIndex of
-    Player1 ->
-      { playerSet
-      | player1 = updateCard card playerSet.player1
-      }
-
-    Player2 ->
-      { playerSet
-      | player2 = updateCard card playerSet.player2
-      }
-
-    Player3 ->
-      { playerSet
-      | player3 = updateCard card playerSet.player3
-      }
-
-    Player4 ->
-      { playerSet
-      | player4 = updateCard card playerSet.player4
-      }
-
-    Player5 ->
-      { playerSet
-      | player5 = updateCard card playerSet.player5
-      }
-
-    Player6 ->
-      { playerSet
-      | player6 = updateCard card playerSet.player6
-      }
-
-
-initPlayerStatusSet : PlayerStatusSet
-initPlayerStatusSet =
-  { status1 = Undecided
-  , status2 = Undecided
-  , status3 = Undecided
-  , status4 = Undecided
-  , status5 = Undecided
-  , status6 = Undecided
-  }
-
 
 
 initPlayerSet : PlayerSet
@@ -393,6 +343,7 @@ initModel _ =
   --   , haveIPlayed = False
   --   , turnStatus = FirstAndMyTurn
   --   }
+  -- ( ErrorState
   , Cmd.none
   )
 
@@ -464,60 +415,26 @@ updatePlayer playerIndex update players =
       { players | player6 = update players.player6 }
 
 
-getPlayers : PlayerSet -> List Player
-getPlayers players =
-  [ players.player1
-  , players.player2
-  , players.player3
-  , players.player4
-  , players.player5
-  , players.player6
+updateCardInSet : PlayerIndex -> Card -> PlayerSet -> PlayerSet
+updateCardInSet playerIndex card = updatePlayer playerIndex (\player ->
+    { player | card = Just card }
+  )
+
+
+updatePlayerStatus : PlayerIndex -> PlayerStatus -> PlayerSet -> PlayerSet
+updatePlayerStatus playerIndex status = updatePlayer playerIndex (\player ->
+    { player | status = status }
+  )
+
+getPlayers : (Player -> a) -> PlayerSet -> List (PlayerIndex, a)
+getPlayers f players =
+  [ (Player1, f players.player1)
+  , (Player2, f players.player2)
+  , (Player3, f players.player3)
+  , (Player4, f players.player4)
+  , (Player5, f players.player5)
+  , (Player6, f players.player6)
   ]
-
-
-getPlayerStatuses : PlayerStatusSet -> List (PlayerIndex, PlayerStatus)
-getPlayerStatuses playerStatusSet = List.map2 Tuple.pair allPlayerIndices
-  [ playerStatusSet.status1
-  , playerStatusSet.status2
-  , playerStatusSet.status3
-  , playerStatusSet.status4
-  , playerStatusSet.status5
-  , playerStatusSet.status6
-  ]
-
-
-setPlayerStatus : PlayerIndex -> PlayerStatus -> PlayerStatusSet -> PlayerStatusSet
-setPlayerStatus playerIndex playerStatus playerStatusSet =
-  case playerIndex of
-    Player1 ->
-      { playerStatusSet
-      | status1 = playerStatus
-      }
-
-    Player2 ->
-      { playerStatusSet
-      | status2 = playerStatus
-      }
-
-    Player3 ->
-      { playerStatusSet
-      | status3 = playerStatus
-      }
-
-    Player4 ->
-      { playerStatusSet
-      | status4 = playerStatus
-      }
-
-    Player5 ->
-      { playerStatusSet
-      | status5 = playerStatus
-      }
-
-    Player6 ->
-      { playerStatusSet
-      | status6 = playerStatus
-      }
 
 
 isPlayerHelper : Card -> SelectionData -> Bool

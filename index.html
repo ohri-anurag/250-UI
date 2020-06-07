@@ -25,7 +25,12 @@
     // When a command goes to the `messageSender` port, we pass the message
     // along to the WebSocket.
     app.ports.messageSender.subscribe(function(message) {
-      socket.send(message);
+      if (socket.readyState == WebSocket.OPEN) {
+        socket.send(message);
+      }
+      else {
+        app.ports.messageReceiver.send("\{\"tag\":\"WebsocketFailed\"\}");
+      }
     });
 
     // When a message comes into our WebSocket, we pass the message along

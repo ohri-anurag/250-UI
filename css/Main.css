@@ -5,7 +5,7 @@
   text-align: center;
 }
 
-.beginGame, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView {
+.beginGame, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer {
   position: absolute;
   width: 100%;
   font-size: 24px;
@@ -417,4 +417,31 @@
 
 .bidders span {
   margin: 0 auto;
+}
+
+.errorContainer {
+  height: 100%;
+  background-color: #222222;
+  display: flex;
+  color: black;
+}
+
+.error {
+  width: 60%;
+  height: 60%;
+  background-color: #27ae60;
+  border: 3px solid white;
+  border-radius: 10px;
+  margin: auto;
+}
+
+.errorHeading {
+  margin-top: 40px;
+}
+
+.errorPara {
+  margin-top: 20px;
+  width: 80%;
+  margin: auto;
+  white-space: pre-line;
 }

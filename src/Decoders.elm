@@ -40,6 +40,7 @@ receivedDataDecoder =
       , gameScore = 0
       , totalScore = 0
       , card = Nothing
+      , status = Undecided
       }
     playerNameSetToPlayerSet playerNameSet = succeed
       { player1 = playerWithName playerNameSet.name1
@@ -80,9 +81,7 @@ receivedDataDecoder =
         |> map HasQuitBidding
 
       "SelectionData" ->
-        map2 SelectionData
-          (field "trump" suitDecoder)
-          (list cardDecoder |> field "helpers")
+        selectionDataDecoder
         |> andThen (ReceivedSelectionData >> succeed)
 
       "PlayCard" ->
@@ -110,11 +109,18 @@ receivedDataDecoder =
           (field "myData" myDataDecoder)
           (field "bidders" playerIndicesDecoder)
 
-      -- "RoundReconnectionData" ->
-      --   map4 RoundReconnectionData
-      --     (field "playerSet" playerSetDecoder)
-      --     (field "biddingData" biddingDataDecoder)
-      --     (field "myData" myDataDecoder)
+      "RoundReconnectionData" ->
+        map7 RoundReconnectionData
+          (field "playerSet" playerSetDecoder)
+          (field "biddingData" biddingDataDecoder)
+          (field "myData" myDataDecoder)
+          (field "selectionData" selectionDataDecoder)
+          (field "firstPlayer" playerIndexDecoder)
+          (field "turn" playerIndexDecoder)
+          (field "round" roundDecoder)
+
+      "WebsocketFailed" ->
+        succeed WebsocketFailed
 
       _ ->
         "Unknown tag received: " ++ tag |> fail
@@ -246,11 +252,12 @@ playerNameSetDecoder =
 
 playerDecoder : Decoder Player
 playerDecoder =
-  map4 Player
+  map5 Player
     (field "totalScore" int)
     (field "gameScore" int)
     (field "name" string)
     (field "card" (nullable cardDecoder))
+    (field "status" playerStatusDecoder)
 
 
 playerSetDecoder : Decoder PlayerSet
@@ -277,3 +284,63 @@ myDataDecoder =
   map2 MyData
     (field "myIndex" playerIndexDecoder)
     (field "myCards" cardsDecoder)
+
+
+playerStatusDecoder : Decoder PlayerStatus
+playerStatusDecoder =
+  string
+  |> andThen (\str ->
+    case str of
+      "BiddingTeam" ->
+        succeed BiddingTeam
+
+      "AntiTeam" ->
+        succeed AntiTeam
+
+      "Undecided" ->
+        succeed Undecided
+
+      _ ->
+        "Unknown PlayerStatus: " ++ str |> fail
+  )
+
+
+selectionDataDecoder : Decoder SelectionData
+selectionDataDecoder =
+  map2 SelectionData
+    (field "trump" suitDecoder)
+    (list cardDecoder |> field "helpers")
+
+
+roundDecoder : Decoder Round
+roundDecoder =
+  string
+  |> andThen (\str ->
+    case str of
+      "Round1" ->
+        succeed Round1
+
+      "Round2" ->
+        succeed Round2
+
+      "Round3" ->
+        succeed Round3
+
+      "Round4" ->
+        succeed Round4
+
+      "Round5" ->
+        succeed Round5
+
+      "Round6" ->
+        succeed Round6
+
+      "Round7" ->
+        succeed Round7
+
+      "Round8" ->
+        succeed Round8
+
+      _ ->
+        "Unknown Round: " ++ str |> fail
+  )

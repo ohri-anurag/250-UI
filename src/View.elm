@@ -1,7 +1,7 @@
 module View exposing (..)
 
 
-import Html exposing (Attribute, Html, button, div, img, input, label, option, select, span, text)
+import Html exposing (Attribute, Html, button, div, h1, img, input, label, option, select, span, text)
 import Html.Attributes exposing (attribute, height, src, style, width)
 import Html.Events exposing (on, onClick, onInput)
 import String exposing (fromInt)
@@ -58,9 +58,7 @@ view model =
         myIndex = commonData.myData.myIndex
         me = getPlayer commonData.playerSet myIndex
         playerCards =
-          getPlayers commonData.playerSet
-          |> List.map .card
-          |> List.map2 Tuple.pair allPlayerIndices
+          getPlayers .card commonData.playerSet
       in
       div
         [attribute "class" "playRoundView"]
@@ -71,10 +69,36 @@ view model =
             ]
         , div
             [attribute "class" "playRoundContent"]
-            [ getPlayerStatuses playRoundData.playersStatus
+            [ getPlayers .status commonData.playerSet
               |> otherPlayersView myIndex commonData.playerSet
             , playAreaView playerCards myIndex
             , myCardsView playRoundData.turnStatus commonData.myData.myCards me
+            ]
+        ]
+
+    ErrorState ->
+      div
+        [attribute "class" "errorContainer"]
+        [ div
+            [attribute "class" "error"]
+            [ h1
+                [attribute "class" "errorHeading"]
+                [text "OOPS!!"]
+            , div
+                [attribute "class" "errorPara"]
+                [text
+                  """
+                  No, I'm not talking about "Object Oriented Programming Systems".
+                  Your websocket connection has failed.
+
+
+                  But no need to worry dear friend!!
+                  Just refresh your page and re-enter your details,
+                  specifically your id.
+
+                  You'll magically re-join the game,
+                  much as your websocket magically got disconnected.
+                  """]
             ]
         ]
 
