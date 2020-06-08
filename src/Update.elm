@@ -308,7 +308,7 @@ handleReceivedMessages receivedMessage model =
           let
             updateMyData myData =
               { myData
-              | myCards = List.filter ((==) card >> not) myData.myCards
+              | myCards = List.filter ((/=) card) myData.myCards
               }
 
             myIndex = commonData.myData.myIndex
@@ -380,7 +380,7 @@ handleReceivedMessages receivedMessage model =
 
             (newerSet, newerHelpersRevealed) = updatePlayerSet commonData.playerSet
           in
-          ( PlayRound 
+          ( PlayRound
               { commonData
               | myData = updateMyData commonData.myData
               , playerSet = updateCardInSet oldTurn card newerSet
@@ -399,17 +399,20 @@ handleReceivedMessages receivedMessage model =
       case model of
         PlayRound commonData playRoundData ->
           let
-            updatePlayers = updatePlayer winner(\p -> 
-                { p
-                | gameScore = p.gameScore + score
-                , card = Nothing
-                }
-              ) commonData.playerSet
+            newPlayerSet =
+              List.foldr (\playerIndex playerSet ->
+                updatePlayer playerIndex (\player ->
+                  { player
+                  | gameScore = if playerIndex == winner then player.gameScore + score else player.gameScore
+                  , card = Nothing
+                  }
+                  ) playerSet
+              ) commonData.playerSet allPlayerIndices
             newRound = nextRound playRoundData.roundIndex
           in
           ( PlayRound
               { commonData
-              | playerSet = updatePlayers
+              | playerSet = newPlayerSet
               }
               { playRoundData
               | turnStatus =
@@ -441,6 +444,7 @@ handleReceivedMessages receivedMessage model =
                       if List.member playerIndex winningTeam
                         then totalScore
                         else 0
+                  , status = Undecided
                   }
                 ) playerSet
               ) commonData.playerSet allPlayerIndices
