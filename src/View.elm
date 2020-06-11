@@ -14,8 +14,15 @@ import Model exposing (..)
 view : Model -> Html Msg
 view model =
   case model of
-    BeginGamePage playerId playerName gameName ->
-      beginGamePageView playerId playerName gameName
+    BeginGamePage playerId playerName gameName validation ->
+      beginGamePageView playerId playerName gameName validation 
+
+    WaitingForServerValidation playerId playerName gameName ->
+      div
+        [ attribute "class" "serverValidationContainer" ]
+        [ div []
+          [ text "Waiting for server to validate your username and player name" ]
+        ]
 
     WaitingForPlayers playerNames gameName ->
       waitingForPlayersView playerNames gameName
@@ -103,30 +110,61 @@ view model =
         ]
 
 
-beginGamePageView : String -> String -> String -> Html Msg
-beginGamePageView playerId playerName gameName =
-  div
-    [attribute "class" "beginGame"]
+beginGamePageView : String -> String -> String -> Maybe Validation -> Html Msg
+beginGamePageView playerId playerName gameName validation =
+  let
+    errorText =
+      case validation of
+        Just error ->
+          case error of
+            EmptyId ->
+              "Username can't be empty"
+
+            EmptyName ->
+              "Player Name can't be empty"
+
+            EmptyGameName ->
+              "Game Name can't be empty"
+
+            DuplicateId ->
+              "A Player with the same username already exists. Please choose another."
+
+            DuplicateName ->
+              "A Player with same player name already exists. Please choose another."
+
+        Nothing ->
+          ""
+  in
+  div [attribute "class" "beginGameContainer"] <|
     [ div
-        [attribute "class" "beginGameHeader"]
-        [text "Welcome to the card game 250!!"]
-    , div []
-        [ label [] [text "Enter your id(this will be used if you get disconnected):"]
-        , input [onInput UpdatePlayerId] [text playerId]
-        ]
-    , div []
-        [ label [] [text "Enter your display name:"]
-        , input [onInput UpdatePlayerName] [text playerName]
-        ]
-    , div []
-        [ label [] [text "Enter a name for the group:"]
-        , input [onInput UpdateGameName] [text gameName]
-        ]
+      [attribute "class" "beginGame"]
+      [ div
+          [attribute "class" "beginGameHeader"]
+          [text "Welcome to the card game 250!!"]
+      , div
+          [attribute "class" "beginGameInputs"]
+          [ label [] [text "Enter your username (this will be used if you get disconnected):"]
+          , input [onInput UpdatePlayerId] [text playerId]
+          ]
+      , div
+          [attribute "class" "beginGameInputs"]
+          [ label [] [text "Enter your player name (used for display):"]
+          , input [onInput UpdatePlayerName] [text playerName]
+          ]
+      , div
+          [attribute "class" "beginGameInputs"]
+          [ label [] [text "Enter a name for the group:"]
+          , input [onInput UpdateGameName] [text gameName]
+          ]
+      , div
+          [ attribute "class" "beginGameButton"
+          , onClick SendGameName
+          ]
+          [text "Begin Game"]
+      ]
     , div
-        [ attribute "class" "beginGameButton"
-        , onClick SendGameName
-        ]
-        [text "Begin Game"]
+        [attribute "class" "errorView"]
+        [ text errorText ]
     ]
 
 

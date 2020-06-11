@@ -90,8 +90,17 @@ type alias PlayRoundData =
   }
 
 
+type Validation
+  = EmptyId
+  | EmptyName
+  | EmptyGameName
+  | DuplicateId
+  | DuplicateName
+
+
 type Model
-  = BeginGamePage String String String
+  = BeginGamePage String String String (Maybe Validation)
+  | WaitingForServerValidation String String String
   | WaitingForPlayers (List String) String
   | BiddingRound CommonData (List PlayerIndex)
   | TrumpSelection CommonData SelectionData
@@ -167,6 +176,8 @@ type ReceivedMessage
       PlayerIndex         -- Turn
       Round               -- Which round
   | WebsocketFailed
+  | PlayerWithIdAlreadyExists
+  | PlayerWithNameAlreadyExists
 
 
 type Msg
@@ -291,7 +302,8 @@ initPlayerSet =
 
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
-  ( BeginGamePage "" "" ""
+  ( BeginGamePage "" "" "" Nothing
+  -- ( WaitingForServerValidation "" "" ""
   -- ( BiddingRound "250aadmi"
   --   { playerSet = initPlayerSet
   --   , biddingData =

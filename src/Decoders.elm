@@ -122,6 +122,12 @@ receivedDataDecoder =
       "WebsocketFailed" ->
         succeed WebsocketFailed
 
+      "PlayerWithIdAlreadyExists" ->
+        succeed PlayerWithIdAlreadyExists
+
+      "PlayerWithNameAlreadyExists" ->
+        succeed PlayerWithNameAlreadyExists
+
       _ ->
         "Unknown tag received: " ++ tag |> fail
   )

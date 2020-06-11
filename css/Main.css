@@ -5,20 +5,28 @@
   text-align: center;
 }
 
-.beginGame, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer {
+.beginGameContainer, .serverValidationContainer, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer {
   position: absolute;
   width: 100%;
   font-size: 24px;
 }
 
-.beginGame, .waitingForPlayers, .waitingForTrumpView {
+.beginGameContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.waitingForPlayers, .waitingForTrumpView {
   height: 60%;
   top: 20%;
 }
 
-.beginGame, .beginGame div {
+.beginGame, .beginGameInputs {
+  margin: auto;
   display: flex;
   flex-direction: column;
+  height: 60%;
 }
 
 .beginGame div {
@@ -45,6 +53,21 @@
   background-color: black;
   color: white;
   cursor: pointer;
+}
+
+.errorView {
+  color: #d00;
+  height: 50px;
+  margin: auto;
+}
+
+.serverValidationContainer {
+  height: 100%;
+  display: flex;
+}
+
+.serverValidationContainer div {
+  margin: auto;
 }
 
 .biddingRoundView, .playRoundView {
