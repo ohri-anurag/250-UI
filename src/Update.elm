@@ -9,41 +9,53 @@ import Json.Encode exposing (Value, encode)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
+  case updateHelper msg model of
+    (state, cmd) ->
+      case cmd of
+        Just c ->
+          (state, sendMessage c)
+
+        Nothing ->
+          (state, Cmd.none)
+
+
+updateHelper : Msg -> Model -> (Model, Maybe SentMessage)
+updateHelper msg model =
   case msg of
     UpdateGameName str ->
       case model of
         BeginGamePage playerId playerName _ ->
-          (BeginGamePage playerId playerName str, Cmd.none)
+          (BeginGamePage playerId playerName str, Nothing)
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     UpdatePlayerName str ->
       case model of
         BeginGamePage playerId _ gameName ->
-          (BeginGamePage playerId str gameName, Cmd.none)
+          (BeginGamePage playerId str gameName, Nothing)
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     UpdatePlayerId str ->
       case model of
         BeginGamePage _ playerName gameName ->
-          (BeginGamePage str playerName gameName, Cmd.none)
+          (BeginGamePage str playerName gameName, Nothing)
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     SendGameName ->
       case model of
         BeginGamePage playerId playerName gameName ->
           ( WaitingForPlayers [playerName] gameName
           , IntroData playerId playerName gameName
-            |> sendMessage
+            |> Just
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
     
     BidPlus5 ->
       sendIncreasedBidMessage model 5
@@ -57,11 +69,11 @@ update msg model =
           ( List.filter ((/=) commonData.myData.myIndex) bidders
             |> BiddingRound commonData
           , SendQuit commonData.gameName commonData.myData.myIndex
-            |> sendMessage
+            |> Just
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     SelectTrump suit ->
       case model of
@@ -70,11 +82,11 @@ update msg model =
               { selectionData
               | trump = suit
               }
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     SelectHelper card ->
       case model of
@@ -97,22 +109,22 @@ update msg model =
                   else selectionData
           in
           ( TrumpSelection commonData newSelectionData
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     SendTrump ->
       case model of
         TrumpSelection commonData selectionData ->
           ( model
           , SentSelectionData commonData.gameName selectionData
-            |> sendMessage
+            |> Just
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     SendCard card ->
       let
@@ -130,44 +142,44 @@ update msg model =
           ( PlayRound commonData
             { playRoundData | turnStatus = updateTurn playRoundData.turnStatus }
           , PlayedCard commonData.gameName card
-            |> sendMessage
+            |> Just
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     ReceivedMessageType receivedMessage ->
       handleReceivedMessages receivedMessage model
 
     SentMessageType _ ->
-      (model, Cmd.none)
+      (model, Nothing)
 
     NoOp ->
-      (model, Cmd.none)
+      (model, Nothing)
 
 
-handleReceivedMessages : ReceivedMessage -> Model -> (Model, Cmd Msg)
+handleReceivedMessages : ReceivedMessage -> Model -> (Model, Maybe SentMessage)
 handleReceivedMessages receivedMessage model =
   case receivedMessage of
     PlayerJoined newPlayer ->
       case model of
         WaitingForPlayers players gameName ->
           ( WaitingForPlayers (players ++ [newPlayer]) gameName
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     ExistingPlayers existingPlayers ->
       case model of
         WaitingForPlayers players gameName ->
             ( WaitingForPlayers (existingPlayers ++ players) gameName
-            , Cmd.none
+            , Nothing
             )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     GameData playerSet firstBidder myIndex myCards ->
       case model of
@@ -188,11 +200,11 @@ handleReceivedMessages receivedMessage model =
               }
           in
           ( BiddingRound commonData allPlayerIndices
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     MaximumBid bidder bid ->
       case model of
@@ -209,11 +221,11 @@ handleReceivedMessages receivedMessage model =
               | biddingData = updateBiddingData commonData.biddingData
               }
               bidders
-          , Cmd.none
+          , Nothing
           )
         
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     HasQuitBidding quitter ->
       case model of
@@ -231,19 +243,19 @@ handleReceivedMessages receivedMessage model =
                       { trump = Spade
                       , helpers = []
                       }
-                  , Cmd.none
+                  , Nothing
                   )
                 else
                   ( WaitingForTrump commonData
-                  , Cmd.none
+                  , Nothing
                   )
             else
               ( BiddingRound commonData newBidders
-              , Cmd.none
+              , Nothing
               )
         
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     ReceivedSelectionData selectionData ->
       case model of
@@ -270,7 +282,7 @@ handleReceivedMessages receivedMessage model =
                     then FirstAndMyTurn
                     else FirstAndNotMyTurn firstBidder
               }
-          , Cmd.none
+          , Nothing
           )
 
         WaitingForTrump commonData ->
@@ -296,11 +308,11 @@ handleReceivedMessages receivedMessage model =
                     then FirstAndMyTurn
                     else FirstAndNotMyTurn firstBidder
               }
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     PlayCard card ->
       case model of
@@ -389,11 +401,11 @@ handleReceivedMessages receivedMessage model =
               | helpersRevealed = newerHelpersRevealed
               , turnStatus = newTurnStatus
               }
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     RoundData winner score ->
       case model of
@@ -424,11 +436,11 @@ handleReceivedMessages receivedMessage model =
               , roundIndex = newRound
               , firstPlayer = winner
               }
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     GameFinishedData winningTeam totalScore ->
       case model of
@@ -454,11 +466,11 @@ handleReceivedMessages receivedMessage model =
               | playerSet = updatedPlayerScores
               }
               playRoundData
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     NewGame cards ->
       case model of
@@ -479,11 +491,11 @@ handleReceivedMessages receivedMessage model =
                 }
               }
               allPlayerIndices
-          , Cmd.none
+          , Nothing
           )
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     BiddingReconnectionData playerSet biddingData myData bidders  ->
       case model of
@@ -502,7 +514,7 @@ handleReceivedMessages receivedMessage model =
                     { trump = Spade
                     , helpers = []
                     }
-                , Cmd.none)
+                , Nothing)
               else
                 ( WaitingForTrump
                     { gameName = gameName
@@ -510,7 +522,7 @@ handleReceivedMessages receivedMessage model =
                     , biddingData = biddingData
                     , myData = myData
                     }
-                , Cmd.none
+                , Nothing
                 )
             else
               ( BiddingRound
@@ -520,10 +532,10 @@ handleReceivedMessages receivedMessage model =
                   , myData = myData
                   }
                   bidders
-              , Cmd.none)
+              , Nothing)
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     RoundReconnectionData playerSet biddingData myData selectionData firstPlayer turn round ->
       case model of
@@ -540,13 +552,13 @@ handleReceivedMessages receivedMessage model =
             , helpersRevealed = calculateHelpersRevealed playerSet selectionData
             , turnStatus = calculateTurnStatus turn firstPlayer myData.myIndex playerSet
             }
-          , Cmd.none)
+          , Nothing)
 
         _ ->
-          (model, Cmd.none)
+          (model, Nothing)
 
     WebsocketFailed ->
-      (ErrorState, Cmd.none)
+      (ErrorState, Nothing)
 
 
 calculateHelpersRevealed : PlayerSet -> SelectionData -> Int
@@ -580,7 +592,7 @@ calculateTurnStatus turn firstPlayer myIndex playerSet =
       else NotFirstAndNotMyTurn turn baseCard
 
 
-sendIncreasedBidMessage : Model -> Int -> (Model, Cmd Msg)
+sendIncreasedBidMessage : Model -> Int -> (Model, Maybe SentMessage)
 sendIncreasedBidMessage model delta =
   case model of
     BiddingRound commonData bidders ->
@@ -592,11 +604,11 @@ sendIncreasedBidMessage model delta =
           else model
       , min newBid 250
         |> IncreaseBid commonData.gameName commonData.myData.myIndex
-        |> sendMessage
+        |> Just
       )
 
     _ ->
-      (model, Cmd.none)
+      (model, Nothing)
 
 
 getPlayersStatus : MyData -> PlayerIndex -> SelectionData -> PlayerSet -> (PlayerSet, Int)
