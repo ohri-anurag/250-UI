@@ -2,7 +2,7 @@ module View exposing (..)
 
 
 import Html exposing (Attribute, Html, button, div, h1, img, input, label, option, select, span, text)
-import Html.Attributes exposing (attribute, height, src, style, width)
+import Html.Attributes exposing (attribute, height, src, style, value, width)
 import Html.Events exposing (on, onClick, onInput)
 import String exposing (fromInt)
 
@@ -144,17 +144,17 @@ beginGamePageView playerId playerName gameName validation =
       , div
           [attribute "class" "beginGameInputs"]
           [ label [] [text "Enter your username (this will be used if you get disconnected):"]
-          , input [onInput UpdatePlayerId] [text playerId]
+          , input [value playerId, onInput UpdatePlayerId] [text playerId]
           ]
       , div
           [attribute "class" "beginGameInputs"]
           [ label [] [text "Enter your player name (used for display):"]
-          , input [onInput UpdatePlayerName] [text playerName]
+          , input [value playerName, onInput UpdatePlayerName] [text playerName]
           ]
       , div
           [attribute "class" "beginGameInputs"]
           [ label [] [text "Enter a name for the group:"]
-          , input [onInput UpdateGameName] [text gameName]
+          , input [value gameName, onInput UpdateGameName] [text gameName]
           ]
       , div
           [ attribute "class" "beginGameButton"
