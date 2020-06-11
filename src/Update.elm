@@ -24,35 +24,52 @@ updateHelper msg model =
   case msg of
     UpdateGameName str ->
       case model of
-        BeginGamePage playerId playerName _ ->
-          (BeginGamePage playerId playerName str, Nothing)
+        BeginGamePage playerId playerName _ validation ->
+          (BeginGamePage playerId playerName str validation, Nothing)
 
         _ ->
           (model, Nothing)
 
     UpdatePlayerName str ->
       case model of
-        BeginGamePage playerId _ gameName ->
-          (BeginGamePage playerId str gameName, Nothing)
+        BeginGamePage playerId _ gameName validation ->
+          (BeginGamePage playerId str gameName validation, Nothing)
 
         _ ->
           (model, Nothing)
 
     UpdatePlayerId str ->
       case model of
-        BeginGamePage _ playerName gameName ->
-          (BeginGamePage str playerName gameName, Nothing)
+        BeginGamePage _ playerName gameName validation ->
+          (BeginGamePage str playerName gameName validation, Nothing)
 
         _ ->
           (model, Nothing)
 
     SendGameName ->
       case model of
-        BeginGamePage playerId playerName gameName ->
-          ( WaitingForPlayers [playerName] gameName
-          , IntroData playerId playerName gameName
-            |> Just
-          )
+        BeginGamePage playerId playerName gameName _ ->
+          let
+            validation =
+              if playerId == "" then
+                Just EmptyId
+              else if playerName == "" then
+                Just EmptyName
+              else if gameName == "" then
+                Just EmptyGameName
+              else Nothing
+          in
+          case validation of
+            Nothing ->
+              ( WaitingForServerValidation playerId playerName gameName
+              , IntroData playerId playerName gameName
+                |> Just
+              )
+
+            v ->
+              ( BeginGamePage playerId playerName gameName v
+              , Nothing
+              )
 
         _ ->
           (model, Nothing)
@@ -173,10 +190,10 @@ handleReceivedMessages receivedMessage model =
 
     ExistingPlayers existingPlayers ->
       case model of
-        WaitingForPlayers players gameName ->
-            ( WaitingForPlayers (existingPlayers ++ players) gameName
-            , Nothing
-            )
+        WaitingForServerValidation playerId playerName gameName ->
+          ( WaitingForPlayers (existingPlayers ++ [playerName]) gameName
+          , Nothing
+          )
 
         _ ->
           (model, Nothing)
@@ -559,6 +576,26 @@ handleReceivedMessages receivedMessage model =
 
     WebsocketFailed ->
       (ErrorState, Nothing)
+
+    PlayerWithIdAlreadyExists ->
+      case model of
+        WaitingForServerValidation playerId playerName gameName ->
+          ( BeginGamePage playerId playerName gameName <| Just DuplicateId
+          , Nothing
+          )
+
+        _ ->
+          (model, Nothing)
+
+    PlayerWithNameAlreadyExists ->
+      case model of
+        WaitingForServerValidation playerId playerName gameName ->
+          ( BeginGamePage playerId playerName gameName <| Just DuplicateName
+          , Nothing
+          )
+
+        _ ->
+          (model, Nothing)
 
 
 calculateHelpersRevealed : PlayerSet -> SelectionData -> Int
