@@ -61,7 +61,7 @@ update msg model =
 
         _ ->
           (model, Cmd.none)
-    
+
     BidPlus5 ->
       sendIncreasedBidMessage model 5
 
@@ -504,7 +504,7 @@ handleReceivedMessages receivedMessage model =
 
     BiddingReconnectionData playerSet biddingData myData bidders  ->
       case model of
-        WaitingForPlayers _ gameName ->
+        WaitingForServerValidation _ _ gameName ->
           -- We are in trump selection state
           if List.length bidders == 0
             -- I am the bidder
@@ -544,7 +544,7 @@ handleReceivedMessages receivedMessage model =
 
     RoundReconnectionData playerSet biddingData myData selectionData firstPlayer turn round ->
       case model of
-        WaitingForPlayers _ gameName ->
+        WaitingForServerValidation _ _ gameName ->
           (PlayRound
             { gameName = gameName
             , playerSet = playerSet
