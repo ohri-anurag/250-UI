@@ -29,24 +29,52 @@ suite =
     [ testStateAndCommand
         "updates game name properly"
         (UpdateGameName "test")
-        (BeginGamePage "" "" "")
-        (BeginGamePage "" "" "test", Nothing)
+        (BeginGamePage "" "" "" Nothing)
+        (BeginGamePage "" "" "test" Nothing, Nothing)
 
     , testStateAndCommand
         "updates player name properly"
         (UpdatePlayerName "test")
-        (BeginGamePage "" "" "")
-        (BeginGamePage "" "test" "", Nothing)
+        (BeginGamePage "" "" "" Nothing)
+        (BeginGamePage "" "test" "" Nothing, Nothing)
 
     , testStateAndCommand
         "updates player id properly"
         (UpdatePlayerId "test")
-        (BeginGamePage "" "" "")
-        (BeginGamePage "test" "" "", Nothing)
+        (BeginGamePage "" "" "" Nothing)
+        (BeginGamePage "test" "" "" Nothing, Nothing)
 
     , testStateAndCommand
-        "changes state to WaitingForPlayers when player clicks on Begin game"
+        "changes state to WaitingForServerValidation when player clicks on Begin game with valid id, name and game"
         SendGameName
-        (BeginGamePage "a" "b" "c")
-        (WaitingForPlayers ["b"] "c", IntroData  "a" "b" "c" |> Just)
+        (BeginGamePage "a" "b" "c" Nothing)
+        (WaitingForServerValidation "a" "b" "c", IntroData  "a" "b" "c" |> Just)
+
+    , testStateAndCommand
+        "changes state to BeginGamePage when player clicks on Begin game with invalid id"
+        SendGameName
+        (BeginGamePage "" "b" "c" Nothing)
+        (BeginGamePage "" "b" "c" <| Just EmptyId, Nothing)
+
+    , testStateAndCommand
+        "changes state to WaitingForPlayers when player clicks on Begin game with invalid name"
+        SendGameName
+        (BeginGamePage "a" "" "c" Nothing)
+        (BeginGamePage "a" "" "c" <| Just EmptyName, Nothing)
+
+    , testStateAndCommand
+        "changes state to WaitingForPlayers when player clicks on Begin game with invalid game"
+        SendGameName
+        (BeginGamePage "a" "b" "" Nothing)
+        (BeginGamePage "a" "b" "" <| Just EmptyGameName, Nothing)
+
+    -- , let
+    --     commonData = 
+    --       { gameName = ""
+    --       , playerSet = ""
+    --       , biddingData = ""
+    --       , myData = ""
+    --       }
+    --   testStateAndCommand
+    --     "updates the bid in Bidding Round properly"
     ]
