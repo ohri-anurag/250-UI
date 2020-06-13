@@ -128,6 +128,16 @@ playRoundDataFuzzer =
   ) (selectionDataFuzzer <| limitedLengthList 2 <| list cardFuzzer) playerIndexFuzzer roundIndexFuzzer (intRange 0 2) turnStatusFuzzer
 
 
+gameDataFuzzer : Fuzzer ReceivedMessage
+gameDataFuzzer =
+  map3 (GameData testPlayerSet) playerIndexFuzzer playerIndexFuzzer (list cardFuzzer)
+
+
+maximumBidFuzzer : Fuzzer ReceivedMessage
+maximumBidFuzzer =
+  map2 MaximumBid playerIndexFuzzer <| intRange 150 250
+
+
 testPlayer : PlayerIndex -> Player
 testPlayer playerIndex =
   { totalScore = 0
@@ -223,10 +233,10 @@ testStateAndCommand testDescription message state (finalState, command) =
             stateAndCommand
 
 
-suite : Test
-suite =
-  describe "Update function"
-    -- User Interaction Tests
+-- User Interaction Tests
+suiteUpdateHelper : Test
+suiteUpdateHelper =
+  describe "updateHelper function"
     [ fuzz string "updates player id properly" <|
         \playerId ->
           case updateHelper (UpdatePlayerId playerId) (BeginGamePage "" "" "" Nothing) of
@@ -452,12 +462,15 @@ suite =
                 equal
                   stateAndCommand
                   (BeginGamePage playerId playerName gameName Nothing, Nothing)
+    ]
 
-
-    -- Received Messages Tests
-    , fuzz3 string (list string) string "updates the waiting for players list when a new player joins" <|
+-- Received Messages Tests
+suiteUpdateReceivedData : Test
+suiteUpdateReceivedData =
+  describe "handleReceivedMessages function"
+    [ fuzz3 string (list string) string "updates the waiting for players list when a new player joins" <|
         \playerName existingPlayers gameName ->
-          case updateHelper (PlayerJoined playerName |> ReceivedMessageType) (WaitingForPlayers existingPlayers gameName) of
+          case handleReceivedMessages (PlayerJoined playerName) (WaitingForPlayers existingPlayers gameName) of
             stateAndCommand ->
               equal
                 stateAndCommand
@@ -468,7 +481,7 @@ suite =
     , fuzz3 (list string) string string
         "updates the state to WaitingForPlayers when list of existing players is received" <|
           \existingPlayers gameName playerName ->
-            case updateHelper (ExistingPlayers existingPlayers |> ReceivedMessageType) (WaitingForServerValidation "" playerName gameName) of
+            case handleReceivedMessages (ExistingPlayers existingPlayers) (WaitingForServerValidation "" playerName gameName) of
               stateAndCommand ->
                 equal
                   stateAndCommand
@@ -476,27 +489,101 @@ suite =
                   , Nothing
                   )
 
-    , fuzz3 playerIndexFuzzer playerIndexFuzzer (list cardFuzzer)
+    , fuzz3 gameDataFuzzer (list string) string
         "updates the state to BiddingRound when GameData is received" <|
-          \firstBidder myIndex myCards ->
-            case updateHelper (GameData testPlayerSet firstBidder myIndex myCards |> ReceivedMessageType) (WaitingForPlayers [] "gameName") of
+          \gameData bidders gameName ->
+            case gameData of
+              GameData playerSet firstBidder myIndex myCards ->
+                case handleReceivedMessages gameData (WaitingForPlayers bidders gameName) of
+                  stateAndCommand ->
+                    equal
+                      stateAndCommand
+                      ( BiddingRound
+                          { gameName = gameName
+                          , playerSet = playerSet
+                          , biddingData =
+                            { highestBid = 150
+                            , highestBidder = firstBidder
+                            , firstBidder = firstBidder
+                            }
+                          , myData =
+                            { myIndex = myIndex
+                            , myCards = myCards
+                            }
+                          }
+                          allPlayerIndices
+                      , Nothing
+                      )
+              
+              _ ->
+                fail "Did not receive game data"
+
+    , fuzz3 maximumBidFuzzer (commonDataFuzzer (intRange 150 250)) (list playerIndexFuzzer)
+        "updates the maximum bid correctly" <|
+          \maximumBid commonData bidders ->
+            case maximumBid of
+              MaximumBid bidder bid ->
+                case handleReceivedMessages maximumBid (BiddingRound commonData bidders) of
+                  stateAndCommand ->
+                    let
+                      newBiddingData biddingData =
+                        { biddingData
+                        | highestBid = bid
+                        , highestBidder = bidder
+                        }
+                    in
+                    equal
+                      stateAndCommand
+                      ( BiddingRound { commonData | biddingData = newBiddingData commonData.biddingData } bidders
+                      , Nothing
+                      )
+
+              _ ->
+                fail "Did not receive maximum data"
+
+    , fuzz2 playerIndexFuzzer (commonDataFuzzer (intRange 150 250))
+        "removes player from bidders when they quit bidding" <|
+          \quitter commonData ->
+            case handleReceivedMessages (HasQuitBidding quitter) (BiddingRound commonData allPlayerIndices) of
               stateAndCommand ->
                 equal
                   stateAndCommand
-                  ( BiddingRound
-                      { gameName = "gameName"
-                      , playerSet = testPlayerSet
-                      , biddingData =
-                        { highestBid = 150
-                        , highestBidder = firstBidder
-                        , firstBidder = firstBidder
-                        }
-                      , myData =
-                        { myIndex = myIndex
-                        , myCards = myCards
-                        }
+                  ( BiddingRound commonData <| List.filter ((/=) quitter) allPlayerIndices
+                  , Nothing
+                  )
+
+    , fuzz2 playerIndexFuzzer (commonDataFuzzer (intRange 150 250))
+        "updates state to Trump selection when last player quits, I won bidding" <|
+          \quitter commonData ->
+            let
+              newCommonData =
+                { commonData | biddingData = newBiddingData commonData.biddingData }
+              newBiddingData biddingData = { biddingData | highestBidder = commonData.myData.myIndex }
+            in
+            case handleReceivedMessages (HasQuitBidding quitter) (BiddingRound newCommonData [quitter]) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( TrumpSelection newCommonData
+                      { trump = Spade
+                      , helpers = []
                       }
-                      allPlayerIndices
+                  , Nothing
+                  )
+
+    , fuzz2 playerIndexFuzzer (commonDataFuzzer (intRange 150 250))
+        "updates state to Waiting for trump when last player quits, someone else won bidding" <|
+          \quitter commonData ->
+            let
+              newCommonData =
+                { commonData | biddingData = newBiddingData commonData.biddingData }
+              newBiddingData biddingData = { biddingData | highestBidder = nextTurn commonData.myData.myIndex }
+            in
+            case handleReceivedMessages (HasQuitBidding quitter) (BiddingRound newCommonData [quitter]) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( WaitingForTrump newCommonData
                   , Nothing
                   )
     ]
