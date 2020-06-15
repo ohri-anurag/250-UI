@@ -1,8 +1,8 @@
 module View exposing (..)
 
 
-import Html exposing (Attribute, Html, button, div, h1, img, input, label, option, select, span, text)
-import Html.Attributes exposing (attribute, height, src, style, value, width)
+import Html exposing (Attribute, Html, a, button, div, h1, img, input, label, option, select, span, text)
+import Html.Attributes exposing (attribute, height, href, src, style, value, width)
 import Html.Events exposing (on, onClick, onInput)
 import String exposing (fromInt)
 
@@ -15,7 +15,7 @@ view : Model -> Html Msg
 view model =
   case model of
     BeginGamePage playerId playerName gameName validation ->
-      beginGamePageView playerId playerName gameName validation 
+      beginGamePageView playerId playerName gameName validation
 
     WaitingForServerValidation playerId playerName gameName ->
       div
@@ -165,6 +165,9 @@ beginGamePageView playerId playerName gameName validation =
     , div
         [attribute "class" "errorView"]
         [ text errorText ]
+    , a
+        [attribute "class" "help", href "/help.html"]
+        [text "How It Works"]
     ]
 
 

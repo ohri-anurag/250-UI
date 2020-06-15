@@ -42,14 +42,14 @@
   font-size: 40px;
 }
 
-.beginGameButton {
+.beginGameButton, .help {
   border: 2px solid black;
   border-radius: 10px;
   padding: 10px;
   transition: ease-in color 300ms, ease-in background-color 300ms;
 }
 
-.beginGameButton:hover {
+.beginGameButton:hover, .help:hover {
   background-color: black;
   color: white;
   cursor: pointer;
@@ -59,6 +59,13 @@
   color: #d00;
   height: 50px;
   margin: auto;
+}
+
+.help {
+  color: black;
+  margin: 10px auto;
+  width: 200px;
+  text-decoration: none;
 }
 
 .serverValidationContainer {
