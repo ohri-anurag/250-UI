@@ -368,7 +368,7 @@ handleReceivedMessages receivedMessage model =
                 NotFirstAndMyTurnOver baseCard ->
                   ( if nextTurn myIndex == playRoundData.firstPlayer
                       then RoundFinished
-                      else NotFirstAndNotMyTurn (nextTurn myIndex) card
+                      else NotFirstAndNotMyTurn (nextTurn myIndex) baseCard
                   , myIndex
                   )
 
@@ -516,7 +516,7 @@ handleReceivedMessages receivedMessage model =
 
     BiddingReconnectionData playerSet biddingData myData bidders  ->
       case model of
-        WaitingForPlayers _ gameName ->
+        WaitingForServerValidation _ _ gameName ->
           -- We are in trump selection state
           if List.length bidders == 0
             -- I am the bidder
@@ -556,7 +556,7 @@ handleReceivedMessages receivedMessage model =
 
     RoundReconnectionData playerSet biddingData myData selectionData firstPlayer turn round ->
       case model of
-        WaitingForPlayers _ gameName ->
+        WaitingForServerValidation _ _ gameName ->
           (PlayRound
             { gameName = gameName
             , playerSet = playerSet

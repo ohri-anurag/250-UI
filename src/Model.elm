@@ -303,56 +303,70 @@ initPlayerSet =
 initModel : () -> (Model, Cmd Msg)
 initModel _ =
   ( BeginGamePage "" "" "" Nothing
+  -- ( WaitingForPlayers [] ""
   -- ( WaitingForServerValidation "" "" ""
-  -- ( BiddingRound "250aadmi"
+  -- ( BiddingRound
   --   { playerSet = initPlayerSet
+  --   , gameName = "250aadmi"
   --   , biddingData =
   --     { highestBid = 150
   --     , highestBidder = Player1
   --     , firstBidder = Player1
   --     }
-  --   , bidders = allPlayerIndices
-  --   , amIBidding = True
+  --   , myData =
+  --     {myIndex = Player1
+  --     , myCards = initCards
+  --     }
+  --   } allPlayerIndices
+  -- ( WaitingForTrump
+  --   { playerSet = initPlayerSet
+  --   , gameName = "250aadmi"
+  --   , biddingData =
+  --     { highestBid = 150
+  --     , highestBidder = Player1
+  --     , firstBidder = Player1
+  --     }
   --   , myData =
   --     {myIndex = Player1
   --     , myCards = initCards
   --     }
   --   }
   -- ( TrumpSelection
-  --   { selectionData =
-  --     { trump = Spade
-  --     , helper1 = Nothing
-  --     , helper2 = Nothing
-  --     }
-  --   , bid = 180
-  --   , bidder = Player1
-  --   , playerSet = initPlayerSet
-  --   , myIndex = Player1
+  --   { playerSet = initPlayerSet
   --   , gameName = "250aadmi"
-  --   , myCards = initCards
-  --   , firstBidder = Player1
-  --   }
-  -- ( PlayRound "250aadmi"
-  --   { trumpSelectionData = 
-  --     { selectionData =
-  --       { trump = Spade
-  --       , helpers = [Card Ace Spade, Card Ace Heart]
-  --       }
-  --     , bid = 180
-  --     , bidder = Player1
-  --     , playerSet = initPlayerSet
-  --     , myIndex = Player1
-  --     , myCards = initCards
+  --   , biddingData =
+  --     { highestBid = 150
+  --     , highestBidder = Player1
   --     , firstBidder = Player1
   --     }
+  --   , myData =
+  --     {myIndex = Player1
+  --     , myCards = initCards
+  --     }
+  --   }
+  --   { trump = Spade
+  --   , helpers = []
+  --   }
+  -- ( PlayRound
+  --   { playerSet = initPlayerSet
+  --   , gameName = "250aadmi"
+  --   , biddingData =
+  --     { highestBid = 150
+  --     , highestBidder = Player1
+  --     , firstBidder = Player1
+  --     }
+  --   , myData =
+  --     {myIndex = Player1
+  --     , myCards = initCards
+  --     }
+  --   }
+  --   { selectionData =
+  --     { trump = Spade
+  --     , helpers = [Card Ace Spade, Card Ace Heart]
+  --     }
   --   , firstPlayer = Player1
-  --   , roundIndex = Round1
-  --   , hand = emptyHand
-  --   , playersStatus = initPlayerStatusSet
+  --   , roundIndex = Round3
   --   , helpersRevealed = 0
-  --   , bidder = Player1
-  --   , turn = Just Player1
-  --   , haveIPlayed = False
   --   , turnStatus = FirstAndMyTurn
   --   }
   -- ( ErrorState
