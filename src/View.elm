@@ -41,7 +41,7 @@ view model =
         , div
             [attribute "class" "biddingRoundContent"]
             [ List.map (\i -> (i, Undecided)) allPlayerIndices
-              |> otherPlayersView commonData.myData.myIndex commonData.playerSet
+              |> otherPlayersView commonData.myData.myIndex commonData.playerSet bidders
             , div [attribute "class" "filler"] []
             , myCardsView RoundFinished commonData.myData.myCards me
             ]
@@ -51,14 +51,15 @@ view model =
       trumpSelectionView commonData selectionData
 
     WaitingForTrump commonData ->
-      div
-        [attribute "class" "waitingForTrumpView"]
+      div []
         [ "Waiting for "
             ++ (getPlayer commonData.playerSet commonData.biddingData.highestBidder).name
             ++ " to select trump. Bid Amount: "
             ++ fromInt commonData.biddingData.highestBid
           |> text
         ]
+      |> List.singleton
+      |> div [attribute "class" "waitingForTrumpView"]
 
     PlayRound commonData playRoundData ->
       let
@@ -77,7 +78,7 @@ view model =
         , div
             [attribute "class" "playRoundContent"]
             [ getPlayers .status commonData.playerSet
-              |> otherPlayersView myIndex commonData.playerSet
+              |> otherPlayersView myIndex commonData.playerSet []
             , playAreaView playerCards myIndex
             , myCardsView playRoundData.turnStatus commonData.myData.myCards me
             ]
@@ -144,17 +145,38 @@ beginGamePageView playerId playerName gameName validation =
       , div
           [attribute "class" "beginGameInputs"]
           [ label [] [text "Enter your username (this will be used if you get disconnected):"]
-          , input [value playerId, onInput UpdatePlayerId] [text playerId]
+          , input
+              ( [ value playerId
+                , onInput UpdatePlayerId
+                ]
+                ++
+                if validation == Just EmptyId then [attribute "class" "errorInput"] else []
+              )
+              [text playerId]
           ]
       , div
           [attribute "class" "beginGameInputs"]
           [ label [] [text "Enter your player name (used for display):"]
-          , input [value playerName, onInput UpdatePlayerName] [text playerName]
+          , input
+              ( [ value playerName
+                , onInput UpdatePlayerName
+                ]
+                ++
+                if validation == Just EmptyName then [attribute "class" "errorInput"] else []
+              )
+              [text playerName]
           ]
       , div
           [attribute "class" "beginGameInputs"]
           [ label [] [text "Enter a name for the group:"]
-          , input [value gameName, onInput UpdateGameName] [text gameName]
+          , input
+              ( [ value gameName
+                , onInput UpdateGameName
+                ]
+                ++
+                if validation == Just EmptyGameName then [attribute "class" "errorInput"] else []
+              )
+              [text gameName]
           ]
       , div
           [ attribute "class" "beginGameButton"
@@ -178,17 +200,15 @@ waitingForPlayersView playerNames gameName =
     players = List.map player playerNames
   in
   [ div
-      [attribute "class" "waitingForPlayersHeader"]
-      [ "Waiting For 6 Players in " ++ gameName
-        |> text
-      ]
-  , div
-      []
-      [text "Current Players:"]
+      [ attribute "class" "waitingForPlayersHeader" ]
+      [ text <| "Waiting For 6 Players in " ++ gameName ]
+  , div []
+      [ text "Current Players:" ]
   ]
   ++ players
-  |> div
-      [attribute "class" "waitingForPlayers"]
+  |> div []
+  |> List.singleton
+  |> div [ attribute "class" "waitingForPlayersView" ]
 
 
 myCardsView : TurnStatus -> List Card -> Player -> Html Msg
@@ -239,8 +259,8 @@ gameNameView name =
     [ text name ]
 
 
-otherPlayersView : PlayerIndex -> PlayerSet -> List (PlayerIndex, PlayerStatus) -> Html Msg
-otherPlayersView myIndex playerSet allStatuses =
+otherPlayersView : PlayerIndex -> PlayerSet -> List PlayerIndex -> List (PlayerIndex, PlayerStatus) -> Html Msg
+otherPlayersView myIndex playerSet bidders allStatuses =
   let
     myStatus =
       lookup myIndex allStatuses
@@ -266,10 +286,10 @@ otherPlayersView myIndex playerSet allStatuses =
 
     otherPlayers =
       rotateOtherPlayers allStatuses
-      |> List.map (Tuple.mapBoth (getPlayer playerSet) isAllied)
+      |> List.map (\(i, s) -> (i, getPlayer playerSet i, isAllied s))
   in
   otherPlayers
-    |> List.indexedMap playerView
+    |> List.indexedMap (playerView bidders)
     |> div
         [ attribute "class" "players" ]
     |> List.singleton
@@ -288,7 +308,7 @@ biddingZoneView commonData bidders =
           |> .name
     bidderNames = List.map (getPlayer commonData.playerSet >> .name) bidders
     buttons =
-      button
+      div
         [ attribute "class" "bidButton"
         , onClick BidPlus5
         ]
@@ -298,7 +318,7 @@ biddingZoneView commonData bidders =
         then
         []
         else
-        [ button
+        [ div
             [ attribute "class" "bidButton"
             , onClick BidPlus10
             ]
@@ -312,7 +332,7 @@ biddingZoneView commonData bidders =
               [ div
                   [attribute "class" "increaseBidButtons"]
                   buttons
-              , button
+              , div
                   [ attribute "class" "quitBiddingButton"
                   , onClick QuitBidding
                   ]
@@ -340,14 +360,14 @@ biddingZoneView commonData bidders =
   ]
   ++
   biddingHtml
-  ++
-  [ span []
-      [text "Current Bidders"]
-    ::
-    bidderDivs
-    |> span
-        [attribute "class" "bidders"]
-  ]
+  -- ++
+  -- [ span []
+  --     [text "Current Bidders"]
+  --   ::
+  --   bidderDivs
+  --   |> span
+  --       [attribute "class" "bidders"]
+  -- ]
   |> div
       [ attribute "class" "biddingZone" ]
 
@@ -426,7 +446,7 @@ trumpSelectionView commonData selectionData =
           ::
           helperCards
           |> div [attribute "class" "helperContainer"]
-        , button
+        , div
           [attribute "class" "proceedButton"
           , onClick SendTrump
           ]
@@ -554,21 +574,28 @@ playAreaView cards myIndex =
     ]
 
 
-playerView : Int -> (Player, Maybe Bool) -> Html Msg
-playerView i (player, maybeIsAllied) =
+playerView : List PlayerIndex -> Int -> (PlayerIndex, Player, Maybe Bool) -> Html Msg
+playerView bidders i (playerIndex, player, maybeIsAllied) =
   let
     alliedClass =
       case maybeIsAllied of
         Just isAllied ->
           if isAllied
-            then "ally"
-            else "enemy"
+            then "ally "
+            else "enemy "
 
         Nothing ->
           ""
+
+    isBidding = List.member playerIndex bidders
+
+    biddingClass =
+      if isBidding
+        then "bidder" ++ fromInt i ++ " "
+        else ""
   in
   div
-    [ alliedClass ++ " player p" ++ fromInt i |> attribute "class" ]
+    [ biddingClass ++ alliedClass ++ "player p" ++ fromInt i |> attribute "class" ]
     [ player.name
         |> text
         |> List.singleton

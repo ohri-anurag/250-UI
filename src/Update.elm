@@ -356,7 +356,7 @@ handleReceivedMessages receivedMessage model =
                 NotFirstAndMyTurnOver baseCard ->
                   ( if nextTurn myIndex == playRoundData.firstPlayer
                       then RoundFinished
-                      else NotFirstAndNotMyTurn (nextTurn myIndex) card
+                      else NotFirstAndNotMyTurn (nextTurn myIndex) baseCard
                   , myIndex
                   )
 

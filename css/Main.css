@@ -5,21 +5,29 @@
   text-align: center;
 }
 
-.beginGameContainer, .serverValidationContainer, .waitingForPlayers, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer {
+body {
+  background-color: #222222;
+}
+
+.beginGameContainer, .serverValidationContainer, .waitingForPlayersView, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer {
   position: absolute;
   width: 100%;
   font-size: 24px;
 }
 
-.beginGameContainer {
+.beginGameContainer, .serverValidationContainer, .waitingForPlayersView, .waitingForTrumpView {
+  width: 60%;
   height: 100%;
+  margin: 0 20%;
+  background-color: cornflowerblue;
+  border-left: 2px solid white;
+  border-right: 2px solid white;
   display: flex;
   flex-direction: column;
 }
 
-.waitingForPlayers, .waitingForTrumpView {
-  height: 60%;
-  top: 20%;
+.beginGameContainer input {
+  background-color: #aac5f5;
 }
 
 .beginGame, .beginGameInputs {
@@ -51,14 +59,19 @@
 
 .beginGameButton:hover, .help:hover {
   background-color: black;
-  color: white;
+  color: cornflowerblue;
   cursor: pointer;
 }
 
 .errorView {
-  color: #d00;
+  color: maroon;
   height: 50px;
   margin: auto;
+}
+
+.beginGame input.errorInput {
+  border: 2px solid maroon;
+  background-color: rgba(128, 0, 0, 0.1);
 }
 
 .help {
@@ -70,16 +83,16 @@
 
 .serverValidationContainer {
   height: 100%;
-  display: flex;
 }
 
-.serverValidationContainer div {
+.serverValidationContainer div, .waitingForPlayersView div, .waitingForTrumpView div {
   margin: auto;
 }
 
 .biddingRoundView, .playRoundView {
   height: 100%;
   display: flex;
+  color: cornflowerblue;
 }
 
 .biddingRoundSidebar, .playRoundSidebar {
@@ -135,7 +148,21 @@
   margin-top: 10px;
   padding: 10px;
   font-size: 15px;
-  width: 80%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.bidButton, .quitBiddingButton, .proceedButton {
+  background-color: #222222;
+  border: 2px solid cornflowerblue;
+  border-radius: 10px;
+  transition: ease-in color 300ms, ease-in background-color 300ms;
+}
+
+.bidButton:hover, .quitBiddingButton:hover, .proceedButton:hover {
+  background-color: cornflowerblue;
+  color: black;
+  border-radius: 10px;
 }
 
 .playersContainer {
@@ -161,6 +188,8 @@
   font-size: 18px;
   display: flex;
   flex-direction: column;
+  background-color: #222222;
+  transition: ease-in color 300ms, ease-in background-color 300ms, ease-in border-color 300ms;
 }
 
 .player span {
@@ -190,8 +219,37 @@
 }
 
 .p4 {
-  border-color: cornflowerblue;
-  color: cornflowerblue;
+  border-color: burlywood;
+  color: burlywood;
+}
+
+.bidder0 {
+  background-color: darkturquoise;
+  color: #222222;
+}
+
+.bidder1 {
+  background-color: lightcoral;
+  color: #222222;
+}
+
+.bidder2 {
+  background-color: darkseagreen;
+  color: #222222;
+}
+
+.bidder3 {
+  background-color: rosybrown;
+  color: #222222;
+}
+
+.bidder4 {
+  background-color: burlywood;
+  color: #222222;
+}
+
+.bidder {
+  background-color: #555555;
 }
 
 .playerName {
@@ -216,7 +274,7 @@
 
 .myCards {
   margin: 0 auto;
-  border-top: 1px solid black;
+  border-top: 1px solid cornflowerblue;
 }
 
 .myCards img {
@@ -244,6 +302,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  color: cornflowerblue;
 }
 
 .trumpBox {
@@ -281,12 +340,12 @@
 }
 
 .trump {
-  border: 2px solid lavender;
+  border: 3px solid #222222;
   border-radius: 10px;
 }
 
 .selectedTrump {
-  border: 2px solid violet;
+  border: 3px solid cornflowerblue;
   border-radius: 10px;
 }
 
@@ -318,12 +377,12 @@
 }
 
 .helper {
-  border: 2px solid lavender;
+  border: 3px solid #222222;
   border-radius: 6px;
 }
 
 .selectedHelper {
-  border: 2px solid violet;
+  border: 3px solid cornflowerblue;
   border-radius: 6px;
 }
 
@@ -423,7 +482,7 @@
 }
 
 .p5 {
-  border-color: black;
+  border-color: cornflowerblue;
   margin: 40px auto;
 }
 
@@ -431,12 +490,17 @@
   opacity: 0.3;
 }
 
+.ally, .enemy {
+  color: black;
+  border-color: white;
+}
+
 .ally {
-  background-color: rgba(0, 255, 0, 0.05);
+  background-color: green;
 }
 
 .enemy {
-  background-color: rgba(255, 0, 0, 0.05);
+  background-color: darkred;
 }
 
 .bidders {
@@ -459,7 +523,7 @@
 .error {
   width: 60%;
   height: 60%;
-  background-color: #27ae60;
+  background-color: cornflowerblue;
   border: 3px solid white;
   border-radius: 10px;
   margin: auto;
