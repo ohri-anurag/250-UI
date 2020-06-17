@@ -586,4 +586,356 @@ suiteUpdateReceivedData =
                   ( WaitingForTrump newCommonData
                   , Nothing
                   )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        I was the bidder, asked for both helpers
+        """ <|
+          \commonData ->
+            let
+              newCommonData =
+                { commonData
+                | playerSet = updatePlayerStatus commonData.myData.myIndex BiddingTeam testPlayerSet
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = [Card Queen Spade, Card Queen Heart]
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (TrumpSelection commonData selectionData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound newCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = commonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 0
+                      , turnStatus =
+                        if commonData.biddingData.firstBidder == commonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn commonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        I was the bidder, asked for one helper
+        """ <|
+          \commonData ->
+            let
+              newCommonData =
+                { commonData
+                | playerSet = updatePlayerStatus commonData.myData.myIndex BiddingTeam testPlayerSet
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = [Card Queen Spade]
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (TrumpSelection commonData selectionData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound newCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = commonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 0
+                      , turnStatus =
+                        if commonData.biddingData.firstBidder == commonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn commonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        I was the bidder, asked for zero helpers
+        """ <|
+          \commonData ->
+            let
+              newCommonData =
+                { commonData
+                | playerSet = 
+                    List.foldr (\i ps ->
+                      if i == commonData.myData.myIndex
+                        then updatePlayerStatus i BiddingTeam ps
+                        else updatePlayerStatus i AntiTeam ps
+                    ) testPlayerSet allPlayerIndices
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = []
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (TrumpSelection commonData selectionData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound newCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = commonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 0
+                      , turnStatus =
+                        if commonData.biddingData.firstBidder == commonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn commonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        someone else was the bidder, asked for both helpers,
+        I am the only helper
+        """ <|
+          \commonData ->
+            let
+              newMyData =
+                { myIndex = nextTurn commonData.biddingData.highestBidder
+                , myCards = selectionData.helpers ++ List.drop 2 testCards
+                }
+              newCommonData = { commonData | myData = newMyData }
+              updatedCommonData =
+                { newCommonData
+                | playerSet =
+                    List.foldr (\i ps -> updatePlayerStatus i AntiTeam ps) testPlayerSet allPlayerIndices
+                    |> updatePlayerStatus newCommonData.biddingData.highestBidder BiddingTeam
+                    |> updatePlayerStatus newCommonData.myData.myIndex BiddingTeam
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = [Card Queen Spade, Card Queen Heart]
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (WaitingForTrump newCommonData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound updatedCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = newCommonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 2
+                      , turnStatus =
+                        if newCommonData.biddingData.firstBidder == newCommonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn newCommonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        someone else was the bidder, asked for both helpers,
+        I am a helper
+        """ <|
+          \commonData ->
+            let
+              newMyData =
+                { myIndex = nextTurn commonData.biddingData.highestBidder
+                , myCards = Card Queen Spade :: List.drop 1 testCards
+                }
+              newCommonData = { commonData | myData = newMyData }
+              updatedCommonData =
+                { newCommonData
+                | playerSet =
+                    updatePlayerStatus newCommonData.biddingData.highestBidder BiddingTeam testPlayerSet
+                    |> updatePlayerStatus newCommonData.myData.myIndex BiddingTeam
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = [Card Queen Spade, Card Queen Heart]
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (WaitingForTrump newCommonData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound updatedCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = newCommonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 1
+                      , turnStatus =
+                        if newCommonData.biddingData.firstBidder == newCommonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn newCommonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        someone else was the bidder, asked for both helpers,
+        I am not a helper
+        """ <|
+          \commonData ->
+            let
+              newMyData =
+                { myIndex = nextTurn commonData.biddingData.highestBidder
+                , myCards = testCards
+                }
+              newCommonData = { commonData | myData = newMyData }
+              updatedCommonData =
+                { newCommonData
+                | playerSet =
+                    updatePlayerStatus newCommonData.biddingData.highestBidder BiddingTeam testPlayerSet
+                    |> updatePlayerStatus newCommonData.myData.myIndex AntiTeam
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = [Card Queen Spade, Card Queen Heart]
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (WaitingForTrump newCommonData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound updatedCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = newCommonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 0
+                      , turnStatus =
+                        if newCommonData.biddingData.firstBidder == newCommonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn newCommonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        someone else was the bidder, asked for one helper,
+        I am the only helper
+        """ <|
+          \commonData ->
+            let
+              newMyData =
+                { myIndex = nextTurn commonData.biddingData.highestBidder
+                , myCards = selectionData.helpers ++ List.drop 1 testCards
+                }
+              newCommonData = { commonData | myData = newMyData }
+              updatedCommonData =
+                { newCommonData
+                | playerSet =
+                    List.foldr (\i ps -> updatePlayerStatus i AntiTeam ps) testPlayerSet allPlayerIndices
+                    |> updatePlayerStatus newCommonData.biddingData.highestBidder BiddingTeam
+                    |> updatePlayerStatus newCommonData.myData.myIndex BiddingTeam
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = [Card Queen Spade]
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (WaitingForTrump newCommonData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound updatedCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = newCommonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 1
+                      , turnStatus =
+                        if newCommonData.biddingData.firstBidder == newCommonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn newCommonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        someone else was the bidder, asked for one helper,
+        I am not a helper
+        """ <|
+          \commonData ->
+            let
+              newMyData =
+                { myIndex = nextTurn commonData.biddingData.highestBidder
+                , myCards = testCards
+                }
+              newCommonData = { commonData | myData = newMyData }
+              updatedCommonData =
+                { newCommonData
+                | playerSet =
+                    updatePlayerStatus newCommonData.biddingData.highestBidder BiddingTeam testPlayerSet
+                    |> updatePlayerStatus newCommonData.myData.myIndex AntiTeam
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = [Card Queen Spade]
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (WaitingForTrump newCommonData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound updatedCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = newCommonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 0
+                      , turnStatus =
+                        if newCommonData.biddingData.firstBidder == newCommonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn newCommonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
+
+    , fuzz (commonDataFuzzer (intRange 150 250))
+        """
+        updates state to PlayRound when SelectionData is received,
+        someone else was the bidder, asked for zero helpers,
+        I am not a helper
+        """ <|
+          \commonData ->
+            let
+              newMyData =
+                { myIndex = nextTurn commonData.biddingData.highestBidder
+                , myCards = testCards
+                }
+              newCommonData = { commonData | myData = newMyData }
+              updatedCommonData =
+                { newCommonData
+                | playerSet =
+                    List.foldr (\i ps -> updatePlayerStatus i AntiTeam ps) testPlayerSet allPlayerIndices
+                    |> updatePlayerStatus newCommonData.biddingData.highestBidder BiddingTeam
+                }
+              selectionData =
+                { trump = Spade
+                , helpers = []
+                }
+            in
+            case handleReceivedMessages (ReceivedSelectionData selectionData) (WaitingForTrump newCommonData) of
+              stateAndCommand ->
+                equal
+                  stateAndCommand
+                  ( PlayRound updatedCommonData
+                      { selectionData = selectionData
+                      , firstPlayer = newCommonData.biddingData.firstBidder
+                      , roundIndex = Round1
+                      , helpersRevealed = 0
+                      , turnStatus =
+                        if newCommonData.biddingData.firstBidder == newCommonData.myData.myIndex
+                          then FirstAndMyTurn
+                          else FirstAndNotMyTurn newCommonData.biddingData.firstBidder
+                      }
+                  , Nothing
+                  )
     ]
