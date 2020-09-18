@@ -9,6 +9,7 @@ import String exposing (fromInt)
 
 import Model.Card exposing (..)
 import Model exposing (..)
+import View.Analytics exposing (analyticsPageView)
 
 
 view : Model -> Html Msg
@@ -16,6 +17,9 @@ view model =
   case model of
     BeginGamePage playerId playerName gameName validation ->
       beginGamePageView playerId playerName gameName validation
+
+    AnalyticsPage analyticsMode ->
+      analyticsPageView analyticsMode
 
     WaitingForServerValidation playerId playerName gameName ->
       div
@@ -187,6 +191,11 @@ beginGamePageView playerId playerName gameName validation =
     , div
         [attribute "class" "errorView"]
         [ text errorText ]
+    , button
+        [ attribute "class" "analytics"
+        , onClick AnalyticsClicked
+        ]
+        [text "Scorecard"]
     , a
         [attribute "class" "help", href "/help.html"]
         [text "How It Works"]

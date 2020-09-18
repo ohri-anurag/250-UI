@@ -9,7 +9,7 @@ body {
   background-color: #222222;
 }
 
-.beginGameContainer, .serverValidationContainer, .waitingForPlayersView, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer {
+.beginGameContainer, .serverValidationContainer, .waitingForPlayersView, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer, .analyticsContainer {
   position: absolute;
   width: 100%;
   font-size: 24px;
@@ -50,14 +50,14 @@ body {
   font-size: 40px;
 }
 
-.beginGameButton, .help {
+.beginGameButton, .analytics, .help {
   border: 2px solid black;
   border-radius: 10px;
   padding: 10px;
   transition: ease-in color 300ms, ease-in background-color 300ms;
 }
 
-.beginGameButton:hover, .help:hover {
+.beginGameButton:hover, .analytics:hover, .help:hover {
   background-color: black;
   color: cornflowerblue;
   cursor: pointer;
@@ -72,6 +72,13 @@ body {
 .beginGame input.errorInput {
   border: 2px solid maroon;
   background-color: rgba(128, 0, 0, 0.1);
+}
+
+.analytics {
+  width: 200px;
+  margin: 10px auto;
+  background-color: cornflowerblue;
+  font-size: 24px;
 }
 
 .help {
@@ -538,4 +545,46 @@ body {
   width: 80%;
   margin: auto;
   white-space: pre-line;
+}
+
+.analyticsContainer {
+  background-color: mediumaquamarine;
+  height: 100%;
+}
+
+.analyticsContent {
+  width: 80%;
+  margin: 50px 0 50px 20%;
+}
+
+.totalScoreHeader {
+  margin: 25px 0;
+}
+
+.totalScoreTable {
+  border: 2px solid black;
+  width: 80%;
+  margin-left: 10%;
+}
+
+.totalScoreTable tr:first-of-type {
+  color: mediumaquamarine;
+  background-color: black;
+}
+
+.totalScoreTable tr th:not(:last-of-type) {
+  border-right: 2px solid mediumaquamarine;
+}
+
+.totalScoreTable tr:not(:first-of-type) {
+  color: black;
+  background-color: mediumaquamarine;
+}
+
+.totalScoreTable tr td:not(:last-of-type) {
+  border-right: 2px solid black;
+}
+
+.totalScoreTable tr.odd {
+  background-color: #52a488;
 }

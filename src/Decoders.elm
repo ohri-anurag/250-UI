@@ -4,6 +4,7 @@ port module Decoders exposing(..)
 import Json.Decode exposing (..)
 
 
+import Model.Analytics exposing (..)
 import Model.Card exposing (..)
 import Model exposing (..)
 
@@ -32,6 +33,7 @@ receiveMessage = messageReceiver (\str ->
   )
 
 
+-- WebSocket Decoders
 receivedDataDecoder : Decoder ReceivedMessage
 receivedDataDecoder =
   let
@@ -350,3 +352,16 @@ roundDecoder =
       _ ->
         "Unknown Round: " ++ str |> fail
   )
+
+
+-- HTTP Decoders
+totalDataDecoder : Decoder (List PlayerScoreData)
+totalDataDecoder = list playerScoreDataDecoder
+
+
+playerScoreDataDecoder : Decoder PlayerScoreData
+playerScoreDataDecoder = 
+  map3 PlayerScoreData
+    (field "score" int)
+    (field "name" string)
+    (field "bids" int)

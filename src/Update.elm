@@ -1,10 +1,16 @@
 module Update exposing (..)
 
 
-import Model.Card exposing (..)
-import Model exposing (..)
+import Http
+
+
+import Decoders exposing (totalDataDecoder)
 import Encoders exposing (sendMessage)
 import Json.Encode exposing (Value, encode)
+import Model exposing (..)
+import Model.Analytics exposing (..)
+import Model.Card exposing (..)
+import Update.Analytics exposing (..)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -30,6 +36,25 @@ update msg model =
       case model of
         BeginGamePage _ playerName gameName validation ->
           (BeginGamePage str playerName gameName validation, Cmd.none)
+
+        _ ->
+          (model, Cmd.none)
+
+    AnalyticsClicked ->
+      let
+        errorHandler result =
+          case result of
+            Ok val -> HttpDataType <| TotalDataReceived val
+            Err err -> NoOp
+      in
+      case model of
+        BeginGamePage playerId playerName gameName validation ->
+          ( BeginGamePage playerId playerName gameName validation
+          , Http.get
+            { url = "http://localhost:8081/total"--"https://two-fifty-analytics.herokuapp.com/total"
+            , expect = Http.expectJson errorHandler totalDataDecoder
+            }
+          )
 
         _ ->
           (model, Cmd.none)
@@ -158,6 +183,9 @@ update msg model =
 
     SentMessageType _ ->
       (model, Cmd.none)
+
+    HttpDataType httpData ->
+      handleHttpData httpData model
 
     NoOp ->
       (model, Cmd.none)

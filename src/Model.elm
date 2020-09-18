@@ -1,6 +1,7 @@
 module Model exposing(..)
 
 
+import Model.Analytics exposing (..)
 import Model.Card exposing (..)
 
 
@@ -100,6 +101,7 @@ type Validation
 
 type Model
   = BeginGamePage String String String (Maybe Validation)
+  | AnalyticsPage AnalyticsMode
   | WaitingForServerValidation String String String
   | WaitingForPlayers (List String) String
   | BiddingRound CommonData (List PlayerIndex)
@@ -184,6 +186,7 @@ type Msg
   = UpdatePlayerId String
   | UpdatePlayerName String
   | UpdateGameName String
+  | AnalyticsClicked
   | SendGameName
   | BidPlus5
   | BidPlus10
@@ -195,6 +198,7 @@ type Msg
   | NoOp
   | SentMessageType SentMessage
   | ReceivedMessageType ReceivedMessage
+  | HttpDataType HttpData
 
 
 allPlayerIndices : List PlayerIndex
