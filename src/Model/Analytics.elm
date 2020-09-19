@@ -10,7 +10,9 @@ type AnalyticsMode
 
 
 type alias PlayerScoreData =
-  { score : Int
-  , name : String
+  { name : String
+  , score : Int
+  , games : Int
   , bids : Int
+  , successful_bids : Int
   }

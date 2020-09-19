@@ -361,7 +361,9 @@ totalDataDecoder = list playerScoreDataDecoder
 
 playerScoreDataDecoder : Decoder PlayerScoreData
 playerScoreDataDecoder = 
-  map3 PlayerScoreData
+  map5 PlayerScoreData
+    (field "player_name" string)
     (field "score" int)
-    (field "name" string)
-    (field "bids" int)
+    (field "total_games" int)
+    (field "total_bids" int)
+    (field "successful_bids" int)

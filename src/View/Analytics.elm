@@ -38,6 +38,9 @@ totalModeView playerScoreDataList =
       [ th [] [text "S. No."]
       , th [] [text "Player Name"]
       , th [] [text "Total Score"]
+      , th [] [text "Games Played"]
+      , th [] [text "Total Bids"]
+      , th [] [text "Successful Bids"]
       ]
     :: List.indexedMap playerScoreDataView sortedList
     |> table
@@ -58,4 +61,7 @@ playerScoreDataView index playerScoreData =
     [ td [] [index + 1 |> fromInt |> text]
     , td [] [text playerScoreData.name]
     , td [] [fromInt playerScoreData.score |> text]
+    , td [] [fromInt playerScoreData.games |> text]
+    , td [] [fromInt playerScoreData.bids |> text]
+    , td [] [fromInt playerScoreData.successful_bids |> text]
     ]
