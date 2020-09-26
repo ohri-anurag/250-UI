@@ -51,8 +51,8 @@ update msg model =
         BeginGamePage playerId playerName gameName validation ->
           ( BeginGamePage playerId playerName gameName validation
           , Http.get
-            -- { url = "http://localhost:8081/total"
-            { url = "https://two-fifty-analytics.herokuapp.com/total"
+            -- { url = "http://localhost:8080/total"
+            { url = "http://35.247.142.111:8080/total"
             , expect = Http.expectJson errorHandler totalDataDecoder
             }
           )
