@@ -145,7 +145,7 @@ beginGamePageView playerId playerName gameName validation =
       [attribute "class" "beginGame"]
       [ div
           [attribute "class" "beginGameHeader"]
-          [text "Welcome to the card game 250!!"]
+          [text "Welcome to 250 - SEASON 1!!"]
       , div
           [attribute "class" "beginGameInputs"]
           [ label [] [text "Enter your username (this will be used if you get disconnected):"]
@@ -195,7 +195,7 @@ beginGamePageView playerId playerName gameName validation =
         [ attribute "class" "analytics"
         , onClick AnalyticsClicked
         ]
-        [text "Scorecard"]
+        [text "Scorecard - Season 1"]
     , a
         [attribute "class" "help", href "/help.html"]
         [text "How It Works"]
