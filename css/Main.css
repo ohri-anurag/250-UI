@@ -57,7 +57,7 @@ body {
   transition: ease-in color 300ms, ease-in background-color 300ms;
 }
 
-.beginGameButton:hover, .analytics:hover, .help:hover {
+.beginGameButton:hover, .analytics:hover, .help:hover, .beginGameButton:focus, .analytics:focus, .help:focus {
   background-color: black;
   color: cornflowerblue;
   cursor: pointer;
@@ -74,7 +74,7 @@ body {
   background-color: rgba(128, 0, 0, 0.1);
 }
 
-.analytics {
+.beginGameButton, .analytics {
   width: 200px;
   margin: 10px auto;
   background-color: cornflowerblue;

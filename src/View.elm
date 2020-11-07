@@ -182,7 +182,7 @@ beginGamePageView playerId playerName gameName validation =
               )
               [text gameName]
           ]
-      , div
+      , button
           [ attribute "class" "beginGameButton"
           , onClick SendGameName
           ]
