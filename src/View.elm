@@ -309,6 +309,12 @@ otherPlayersView myIndex playerSet bidders allStatuses =
 biddingZoneView : CommonData -> List PlayerIndex -> Html Msg
 biddingZoneView commonData bidders =
   let
+    firstTurnName =
+      if commonData.biddingData.firstBidder == commonData.myData.myIndex
+        then "You"
+        else
+          getPlayer commonData.playerSet commonData.biddingData.firstBidder
+          |> .name
     highestBidderName =
       if commonData.biddingData.highestBidder == commonData.myData.myIndex
         then "You"
@@ -359,6 +365,12 @@ biddingZoneView commonData bidders =
       List.map bidder bidderNames
   in
   [ span
+      [attribute "class" "firstTurnLabel"]
+      [text "First Turn"]
+  , span
+      [attribute "class" "firstTurn"]
+      ["(" ++ firstTurnName ++ ")" |> text]
+  , span
       [attribute "class" "bidValueLabel"]
       [text "Highest Bid"]
   , span
