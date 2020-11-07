@@ -54,6 +54,9 @@ view model =
     TrumpSelection commonData selectionData ->
       trumpSelectionView commonData selectionData
 
+    TrumpConfirmation commonData selectionData ->
+      trumpConfirmationView commonData selectionData
+
     WaitingForTrump commonData ->
       div []
         [ "Waiting for "
@@ -469,9 +472,73 @@ trumpSelectionView commonData selectionData =
           |> div [attribute "class" "helperContainer"]
         , div
           [attribute "class" "proceedButton"
-          , onClick SendTrump
+          , onClick ConfirmTrump
           ]
           [text "Proceed"]
+        ]
+    , myCardsView RoundFinished commonData.myData.myCards me
+    ]
+
+
+trumpConfirmationView : CommonData -> SelectionData -> Html Msg
+trumpConfirmationView commonData selectionData =
+  let
+    me = getPlayer commonData.playerSet commonData.myData.myIndex
+
+    trumpView suit =
+      div
+        [attribute "class" "trumpWithLabel"]
+        [ div
+            [ attribute "class" "trumpLabel"
+            ]
+            [ showSuit True suit
+              |> text
+            ]
+        , Card Ace suit
+          |> cardView [attribute "class" "trump"]
+        ]
+
+    helperCards =
+      List.map (\card ->
+        cardView
+          [attribute "class" "helper"]
+          card
+      ) selectionData.helpers
+
+  in
+
+  div
+    [attribute "class" "trumpContainer"]
+    [ div
+        [attribute "class" "trumpBox"]
+        [ span
+            [attribute "class" "trumpBoxHeader"]
+            [text "Confirm Trump"]
+        , div
+            [attribute "class" "trumps"]
+            [ trumpView selectionData.trump ]
+        , div
+            [attribute "class" "helperHeader"]
+            [text "Confirm Helpers"]
+          ::
+          helperCards
+          |> div [attribute "class" "helperContainer"]
+        , div
+            [attribute "class" "confirmationText"]
+            [text "Do you want to proceed with the above selections?"]
+        , div
+            [attribute "class" "confirmButtonContainer"]
+            [ button
+                [attribute "class" "confirmYes"
+                , onClick SendTrump
+                ]
+                [text "Yes"]
+            , button
+                [attribute "class" "confirmNo"
+                , onClick DeclineTrump
+                ]
+                [text "No"]
+            ]
         ]
     , myCardsView RoundFinished commonData.myData.myCards me
     ]

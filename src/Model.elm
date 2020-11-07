@@ -106,6 +106,7 @@ type Model
   | WaitingForPlayers (List String) String
   | BiddingRound CommonData (List PlayerIndex)
   | TrumpSelection CommonData SelectionData
+  | TrumpConfirmation CommonData SelectionData
   | WaitingForTrump CommonData
   | PlayRound CommonData PlayRoundData
   | ErrorState
@@ -193,7 +194,9 @@ type Msg
   | QuitBidding
   | SelectTrump Suit
   | SelectHelper Card
+  | ConfirmTrump
   | SendTrump
+  | DeclineTrump
   | SendCard Card
   | NoOp
   | SentMessageType SentMessage
@@ -350,6 +353,22 @@ initModel _ =
   --   }
   --   { trump = Spade
   --   , helpers = []
+  --   }
+  -- ( TrumpConfirmation
+  --   { playerSet = initPlayerSet
+  --   , gameName = "250aadmi"
+  --   , biddingData =
+  --     { highestBid = 150
+  --     , highestBidder = Player1
+  --     , firstBidder = Player1
+  --     }
+  --   , myData =
+  --     {myIndex = Player1
+  --     , myCards = initCards
+  --     }
+  --   }
+  --   { trump = Spade
+  --   , helpers = [Card King Spade, Card King Heart]
   --   }
   -- ( PlayRound
   --   { playerSet = initPlayerSet

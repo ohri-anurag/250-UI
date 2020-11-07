@@ -9,6 +9,10 @@ body {
   background-color: #222222;
 }
 
+button {
+  font-size: 24px;
+}
+
 .beginGameContainer, .serverValidationContainer, .waitingForPlayersView, .biddingRoundView, .waitingForTrumpView, .trumpContainer, .playRoundView, .errorContainer, .analyticsContainer {
   position: absolute;
   width: 100%;
@@ -78,7 +82,6 @@ body {
   width: 200px;
   margin: 10px auto;
   background-color: cornflowerblue;
-  font-size: 24px;
 }
 
 .help {
@@ -347,12 +350,12 @@ body {
 }
 
 .trump {
-  border: 3px solid #222222;
+  border: 5px solid #222222;
   border-radius: 10px;
 }
 
 .selectedTrump {
-  border: 3px solid cornflowerblue;
+  border: 5px solid cornflowerblue;
   border-radius: 10px;
 }
 
@@ -362,6 +365,52 @@ body {
 
 .helperContainer{
   text-align: center;
+}
+
+.confirmationText {
+  margin: 20px 0;
+}
+
+.confirmButtonContainer {
+  width: 30%;
+  margin: 0 auto;
+  display: flex;
+}
+
+.confirmYes, .confirmNo {
+  margin: 0 auto;
+  background-color: #222222;
+  width: 100px;
+  height: 50px;
+  transition: ease-in color 300ms, ease-in background-color 300ms ;
+}
+
+.confirmYes {
+  color: green;
+  border: 2px solid green;
+  border-radius: 5px;
+}
+
+.confirmNo {
+  color: red;
+  border: 2px solid red;
+  border-radius: 5px;
+}
+
+.confirmYes:hover, .confirmNo:hover {
+  cursor: pointer;
+}
+
+.confirmYes:hover, .confirmNo:hover, .confirmYes:focus, .confirmNo:focus {
+  color: #222222;
+}
+
+.confirmYes:hover, .confirmYes:focus {
+  background-color: green;
+}
+
+.confirmNo:hover, .confirmNo:focus {
+  background-color: red;
 }
 
 .waitingForTrumpView {
@@ -384,12 +433,12 @@ body {
 }
 
 .helper {
-  border: 3px solid #222222;
+  border: 5px solid #222222;
   border-radius: 6px;
 }
 
 .selectedHelper {
-  border: 3px solid cornflowerblue;
+  border: 5px solid cornflowerblue;
   border-radius: 6px;
 }
 

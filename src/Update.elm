@@ -146,12 +146,32 @@ update msg model =
         _ ->
           (model, Cmd.none)
 
-    SendTrump ->
+    ConfirmTrump ->
       case model of
         TrumpSelection commonData selectionData ->
+          ( TrumpConfirmation commonData selectionData
+          , Cmd.none
+          )
+
+        _ ->
+          (model, Cmd.none)
+
+    SendTrump ->
+      case model of
+        TrumpConfirmation commonData selectionData ->
           ( model
           , SentSelectionData commonData.gameName selectionData
             |> sendMessage
+          )
+
+        _ ->
+          (model, Cmd.none)
+
+    DeclineTrump ->
+      case model of
+        TrumpConfirmation commonData selectionData ->
+          ( TrumpSelection commonData selectionData
+          , Cmd.none
           )
 
         _ ->
