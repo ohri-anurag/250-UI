@@ -313,7 +313,7 @@ handleReceivedMessages receivedMessage model =
 
     ReceivedSelectionData selectionData ->
       case model of
-        TrumpSelection commonData _ ->
+        TrumpConfirmation commonData _ ->
           let
             (playerSet, helpersRevealed) =
               getPlayersStatus
